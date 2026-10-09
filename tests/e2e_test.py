@@ -49,6 +49,8 @@ async def recorrido(pg, ancho):
     await pg.click('#sig'); await pg.wait_for_timeout(1800)
     assert await pg.is_hidden('#trasEnvio'), 'la instrucción no debe verse antes de enviar'
     await pg.screenshot(path=str(SHOTS / f'{ancho}_05_final_antes.png'), full_page=True)
+    w = await pg.evaluate('document.documentElement.scrollWidth')
+    assert w <= await pg.evaluate('innerWidth'), f'la página se desborda a lo ancho: {w}px'
 
 async def main():
     async with async_playwright() as p:

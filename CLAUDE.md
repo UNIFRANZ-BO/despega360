@@ -21,9 +21,15 @@ base de datos ni Sheets**: decisión de Rafael (09-oct-2026).
 - **«Copiar mi instrucción» aparece solo después de enviar** (candado 🔒 antes). Si cambia algo después de enviar,
   vuelve el candado y debe enviar de nuevo. Sin cambios, el botón solo descarga otra copia (no reenvía).
 - El PDF contiene los datos elegidos + **anexo con la instrucción completa** que se le da a la IA.
-- Se respeta el formato del HTML original (aguayo, paleta morada, Baloo 2 + Atkinson Hyperlegible, claro/oscuro).
-  Agregados: pista con cohete 🚀 de progreso, brillo en las hileras, patrón de rombos en la cabecera, entrada escalonada,
-  «pop» en opciones, confeti de rombos, despegue al enviar, progreso de 3 pasos. Respeta `prefers-reduced-motion`.
+- Se respeta la estructura y el aguayo del HTML original (Baloo 2 + Atkinson Hyperlegible). **v1.1 (09-oct-2026):**
+  Rafael pidió algo más impactante e inmersivo → tema único oscuro «noche andina»: auroras con colores del aguayo,
+  canvas `#cielo` con estrellas, rombos de aguayo flotando en capas (parallax con mouse y scroll) y estrellas fugaces,
+  silueta del Tunari en SVG, franja tejida sobre la barra inferior, tarjetas de vidrio, borde aguayo giratorio
+  (`@property --ang`) en lo elegido, inclinación 3D con mouse, título dorado, pista con cohete 🚀, confeti y despegue.
+  El desenfoque de vidrio solo en computadoras (en celulares sencillos cuesta fluidez); canvas a ~30 fps, se pausa
+  con la pestaña oculta. Respeta `prefers-reduced-motion` (fondo estático).
+  Ojo: `body` debe quedar con fondo transparente (el fondo va en `html`), si no tapa la capa `.fondo` (z-index −1);
+  y nada debe salirse a lo ancho (`main`/`header` con `overflow-x:clip`): la prueba e2e lo verifica.
 - **El texto de la instrucción (`#basePrompt`) y `buildPrompt()` no se tocan**: son idénticos al original
   (verificable comparando con `docs/original_Despega360.html`).
 - La nota de bienvenida ya no dice «No se envía a nadie»: explica que al final se envía una copia.
