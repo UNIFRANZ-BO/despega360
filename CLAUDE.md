@@ -76,8 +76,8 @@ Carpeta en uso: «Despega 360 · Constancias de las emprendedoras» (creada con 
 - [x] v1.1 publicada: repo `UNIFRANZ-BO/despega360` → https://unifranz-bo.github.io/despega360/?v=1; script
       `AKfycbx1BiVd…QASeGHNzzg/exec` en la cuenta dedicada (ping OK, PDF de prueba OK).
 - [x] v2.0 (subir el plan terminado) escrita y probada en local (backend simulado + e2e). Commit local.
-- [ ] **Rafael: pegar el Codigo.gs v2.0 y publicar «Nueva versión»** (misma URL). Verificar `ping` → `version_app:"2.0"`.
-- [ ] Solo después: `git push` y repartir **`?v=2`** (la app v2 no funciona con el script v1: manda `archivo`, no `pdf`).
+- [x] Script v2.0 implementado («Nueva versión», misma URL): ping → `version_app:"2.0"`; foto PRUEBA subida OK y archivo falso rechazado (09-oct-2026).
+- [x] App v2.0 publicada → **https://unifranz-bo.github.io/despega360/?v=2** (la app v2 no funciona con el script v1).
 - [ ] Prueba real desde el celular; `borrarPruebas`; borrar a mano cualquier PDF de prueba sin prefijo
       (posible «… – Delicias del Valle.pdf» de una e2e mal aislada en v1.1; ya corregido).
 
