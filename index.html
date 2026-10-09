@@ -548,7 +548,7 @@ nav.barra{position:fixed;left:0;right:0;bottom:0;z-index:5;
   <button class="reiniciar" id="reiniciar" type="button">Borrar todo y empezar de nuevo</button>
 </section>
 
-<p class="pie"><span class="ver-app" id="verApp">v1.0</span>Programa Despega 360, IFFI – UNIFRANZ/IPEE. Material elaborado con el apoyo financiero de la Unión Europea. Su contenido es responsabilidad exclusiva del IFFI y no refleja necesariamente los puntos de vista de la Unión Europea.</p>
+<p class="pie"><span class="ver-app" id="verApp">v1.1</span>Programa Despega 360, IFFI – UNIFRANZ/IPEE. Material elaborado con el apoyo financiero de la Unión Europea. Su contenido es responsabilidad exclusiva del IFFI y no refleja necesariamente los puntos de vista de la Unión Europea.</p>
 </main>
 
 <nav class="barra" aria-label="Pasos">
@@ -731,8 +731,8 @@ Cierra con 3 recordatorios cortos: llenar a mano los datos personales; guardar e
   /* ---------- Envío a Drive ----------
      URL de la aplicación web de Apps Script (termina en /exec). Sin URL la app funciona en
      modo de prueba: descarga el PDF pero no lo envía. ?api=<url> prueba otra URL sin guardarla. */
-  var VERSION = '1.0';
-  var API_URL_DEFECTO = 'PEGA_AQUI_LA_URL_EXEC';
+  var VERSION = '1.1';
+  var API_URL_DEFECTO = 'https://script.google.com/macros/s/AKfycbx1BiVd41679mynhee_t0etrP4PkSPeBhy9tGed8qAfNvQjk7xAK8lMD6PDQASeGHNzzg/exec';
   var QS = new URLSearchParams(location.search);
   var API_URL = (QS.get('api') || API_URL_DEFECTO).trim();
   var API_OK = /^https:\/\/script\.google(usercontent)?\.com\/.+\/exec$/.test(API_URL);

@@ -135,9 +135,10 @@ async def main():
             print(f'OK {ancho}px · envíos recibidos: {len(DRIVE)}')
             await ctx.close()
 
-        # Modo de prueba (sin URL): descarga y desbloquea, sin enviar
+        # Modo de prueba (?api=sin-url → URL no válida): descarga y desbloquea, sin enviar
         ctx = await b.new_context(accept_downloads=True); pg = await ctx.new_page()
-        await pg.goto((RAIZ / 'index.html').as_uri()); await pg.wait_for_timeout(800)
+        await pg.route('https://script.google.com/**', lambda r: r.abort())   # nunca tocar el servidor real
+        await pg.goto((RAIZ / 'index.html').as_uri() + '?api=sin-url'); await pg.wait_for_timeout(800)
         await recorrido(pg, 'demo')
         async with pg.expect_download():
             await pg.click('#btnPdf')

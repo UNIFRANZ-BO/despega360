@@ -70,8 +70,14 @@ Sin URL (`API_URL_DEFECTO = 'PEGA_AQUI_LA_URL_EXEC'`) la app corre en **modo de 
 
 ## Estado (09-oct-2026)
 - [x] App y script escritos; pruebas locales en verde (backend simulado + Playwright).
-- [ ] Rafael: crear el script en la cuenta dedicada, `configuracionInicial`, implementar y pasar la URL `/exec`.
-- [ ] Incrustar URL, publicar en GitHub Pages (`UNIFRANZ-BO/despega360`?) con `?v=1`, prueba real (PDF de prueba + envío real), `borrarPruebas`.
+- [x] Script implementado en la cuenta dedicada (09-oct-2026): `AKfycbx1BiVd…QASeGHNzzg/exec`. Ping anónimo OK y
+      PDF de prueba subido OK (`PRUEBA-a120d7cafc-85g7p`). URL incrustada en `API_URL_DEFECTO` (app v1.1).
+- [x] Repo `UNIFRANZ-BO/despega360` + GitHub Pages → https://unifranz-bo.github.io/despega360/?v=1
+- [ ] Prueba real desde el celular de Rafael; luego `borrarPruebas` y borrar a mano cualquier PDF de prueba sin prefijo
+      (el 09-oct-2026 una corrida de e2e mal aislada pudo subir «… – Delicias del Valle.pdf»; ya corregido: la e2e
+      bloquea script.google.com y usa `?api=sin-url` para el modo de prueba).
+- Al cambiar la app: `python build.py`, pruebas, commit, push y repartir el enlace con `?v=N+1`. Cambiar solo el
+  script no requiere tocar GitHub (pero sí «Nueva versión» en Apps Script).
 
 ## Comandos
 ```bash
