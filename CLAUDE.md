@@ -26,6 +26,11 @@ Historia completa del chat de origen: `docs/Chat_Despega360_resumen.md`.
     desde el atajo, «Atrás» vuelve a la bienvenida. La ruta de la bienvenida tiene un 4.º paso «Vuelve aquí y sube tu plan».
   - Sin cola persistente (los archivos pueden ser grandes para `localStorage`): si falla, el archivo queda en rojo y se
     reintenta con el **mismo código** (el script no lo duplica).
+- **v2.1 (09-oct-2026): una subcarpeta por emprendimiento** (pedido de Rafael: que no se mezclen los archivos).
+  `subcarpeta_()` la crea dentro de la carpeta principal la primera vez; la busca por nombre normalizado (`clave_`:
+  sin mayúsculas, tildes ni espacios de más) y la recuerda por ID en la propiedad `sub_<clave>` (si Rafael la renombra
+  o la mueve, sigue recibiendo; si la borra, se crea otra). Los `PRUEBA-…` quedan sueltos en la carpeta principal
+  (así `borrarPruebas` los encuentra). `estado` cuenta emprendimientos (subcarpetas) y archivos. Solo cambió el script.
 - **Nombre en Drive:** `AAAA-MM-DD HH.MM – Nombre del emprendimiento.ext`; varios a la vez: `… (1 de 3).jpg`
   (misma hora y numeración para todo el envío, también al reintentar). En la descripción: rubro, municipio, IA,
   nombre original del archivo, hora del equipo y código. Repetidos se depuran a mano (Rafael). Borrar PDF de la
@@ -51,7 +56,7 @@ Historia completa del chat de origen: `docs/Chat_Despega360_resumen.md`.
 | `tests/backend.test.js` | Script con Drive simulado (formatos, archivos disfrazados, varios archivos, tope). |
 | `tests/e2e_test.py` | Recorrido completo con Playwright (390 y 1366 px). **Bloquea script.google.com: nunca usa el servidor real.** |
 
-## Contrato app ↔ script (script v2.0)
+## Contrato app ↔ script (script v2.1; la app no cambió)
 - `GET ?action=ping` → `{ok, servicio:'Despega 360 · planes de acción', version_app:'2.0', abierta}` (JSONP con `&callback=`).
 - `GET ?action=verificar&id=` → `{ok, existe}`.
 - `POST {action:'subir', data:{id, nombre, rubro, municipio, ia, ts, fecha_local, version, parte, total, nombre_original, archivo(base64)}}`
@@ -78,6 +83,7 @@ Carpeta en uso: «Despega 360 · Constancias de las emprendedoras» (creada con 
 - [x] v2.0 (subir el plan terminado) escrita y probada en local (backend simulado + e2e). Commit local.
 - [x] Script v2.0 implementado («Nueva versión», misma URL): ping → `version_app:"2.0"`; foto PRUEBA subida OK y archivo falso rechazado (09-oct-2026).
 - [x] App v2.0 publicada → **https://unifranz-bo.github.io/despega360/?v=2** (la app v2 no funciona con el script v1).
+- [ ] **Rafael: pegar Codigo.gs v2.1 y «Nueva versión»** (subcarpetas). Verificar `ping` → `version_app:"2.1"`.
 - [ ] Prueba real desde el celular; `borrarPruebas`; borrar a mano cualquier PDF de prueba sin prefijo
       (posible «… – Delicias del Valle.pdf» de una e2e mal aislada en v1.1; ya corregido).
 

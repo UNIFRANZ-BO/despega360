@@ -6,11 +6,17 @@ const code = fs.readFileSync(require('path').join(__dirname, '..', 'apps-script'
 const files = [], props = {}, cache = {};
 function File(blob) { this.name = blob.name; this.bytes = blob.bytes; this.type = blob.type; this.id = 'F' + (files.length + 1); this.desc = ''; this.trashed = false; }
 File.prototype = { getId() { return this.id; }, getName() { return this.name; }, setDescription(d) { this.desc = d; return this; }, setTrashed(t) { this.trashed = t; } };
-const folder = {
-  id: 'CARPETA1', getId() { return this.id; }, getName() { return 'Despega 360'; }, getUrl() { return 'https://drive/' + this.id; },
-  createFile(blob) { const f = new File(blob); files.push(f); return f; },
-  getFiles() { const l = files.filter(f => !f.trashed); let i = 0; return { hasNext: () => i < l.length, next: () => l[i++] }; }
+const iter = l => { let i = 0; return { hasNext: () => i < l.length, next: () => l[i++] }; };
+const carpetas = {};
+function Folder(id, name) { this.id = id; this.name = name; this.subs = []; this.trashed = false; carpetas[id] = this; }
+Folder.prototype = {
+  getId() { return this.id; }, getName() { return this.name; }, getUrl() { return 'https://drive/' + this.id; }, isTrashed() { return this.trashed; },
+  createFile(blob) { const f = new File(blob); f.parent = this; files.push(f); return f; },
+  getFiles() { return iter(files.filter(f => !f.trashed && f.parent === this)); },
+  getFolders() { return iter(this.subs.filter(c => !c.trashed)); },
+  createFolder(n) { const c = new Folder('SUB' + (Object.keys(carpetas).length), n); this.subs.push(c); return c; }
 };
+const folder = new Folder('CARPETA1', 'Despega 360');
 let carpetasCreadas = 0;
 const pad = n => String(n).padStart(2, '0');
 const ctx = {
@@ -20,7 +26,7 @@ const ctx = {
   LockService: { getScriptLock: () => ({ waitLock() {}, releaseLock() {} }) },
   DriveApp: {
     createFolder() { carpetasCreadas++; return folder; },
-    getFolderById(id) { if (id !== folder.id) throw new Error('no existe'); return folder; }
+    getFolderById(id) { if (!carpetas[id]) throw new Error('no existe'); return carpetas[id]; }
   },
   Utilities: {
     base64Decode: s => Array.from(Buffer.from(s, 'base64')).map(b => b > 127 ? b - 256 : b),   // bytes con signo, como Java
@@ -97,6 +103,23 @@ assert.strictEqual(post({ id: 'D360-v2aaaa3-q0z4', nombre: 'x', archivo: OLE, no
 assert.strictEqual(files.length, n1, 'no guarda nada inválido');
 console.log('✓ rechaza ZIP sueltos, programas y archivos disfrazados');
 
+// v2.1: una subcarpeta por emprendimiento
+const sub = n => folder.subs.find(c => c.name === n);
+assert(sub('Delicias del Valle') && sub('Ana') && sub('Tejidos Ana Sur'), 'crea subcarpetas: ' + folder.subs.map(c => c.name));
+assert(files[0].parent === sub('Delicias del Valle') && files[n0].parent === sub('Delicias del Valle'));
+const antes = folder.subs.length;
+r = post({ id: 'D360-v21aaaa-q0a1', nombre: '  delicias   del VALLE ', ts, archivo: PDF, nombre_original: 'otra.pdf' });
+r = post({ id: 'D360-v21aaaa-q0a2', nombre: 'Delicias del Válle', ts, archivo: PDF, nombre_original: 'otra.pdf' });
+assert.strictEqual(folder.subs.length, antes, 'variantes del mismo nombre no crean carpetas nuevas');
+assert.strictEqual(files[files.length - 1].parent, sub('Delicias del Valle'));
+sub('Ana').name = 'Ana (revisado)';   // Rafael renombra la subcarpeta
+assert(post({ id: 'D360-v21aaaa-q0a3', nombre: 'Ana', archivo: PDF, nombre_original: 'x.pdf' }).ok);
+assert.strictEqual(files[files.length - 1].parent.name, 'Ana (revisado)', 'sigue llegando a la carpeta renombrada');
+carpetas[props['sub_ana']].trashed = true;   // ...y luego la borra
+assert(post({ id: 'D360-v21aaaa-q0a4', nombre: 'Ana', archivo: PDF, nombre_original: 'x.pdf' }).ok);
+assert.strictEqual(files[files.length - 1].parent.name, 'Ana', 'si la borró, crea una nueva');
+console.log('✓ subcarpetas:', folder.subs.filter(c => !c.trashed).map(c => c.name).join(' · '));
+
 ctx.cerrar();
 assert.strictEqual(post({ id: 'D360-mgx1abh-eeee', nombre: 'x', pdf: PDF }).codigo, 'cerrada');
 assert.strictEqual(get({}).abierta, false);
@@ -104,7 +127,7 @@ ctx.abrir();
 console.log('✓ abrir / cerrar');
 
 r = post({ id: 'PRUEBA-mgx1abi-ffff', nombre: 'Prueba de conexión', ts, pdf: PDF });
-const fp = files[files.length - 1]; assert(r.ok && fp.name.startsWith('PRUEBA · '));
+const fp = files[files.length - 1]; assert(r.ok && fp.name.startsWith('PRUEBA · ') && fp.parent === folder, 'las pruebas quedan sueltas');
 ctx.estado();
 ctx.borrarPruebas();
 assert(fp.trashed && !files[0].trashed);

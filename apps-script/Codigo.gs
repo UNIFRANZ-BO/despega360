@@ -1,10 +1,12 @@
 /**
- * DESPEGA 360 · PLANES DE ACCIÓN DE LAS EMPRENDEDORAS  (v2.0)
+ * DESPEGA 360 · PLANES DE ACCIÓN DE LAS EMPRENDEDORAS  (v2.1)
  * Recibe el plan terminado que cada emprendedora sube desde la app «Arma tu guía IA»
  * (PDF, Word, fotos, PowerPoint o Excel) y lo guarda en una carpeta de Google Drive.
  * No usa hojas de cálculo ni base de datos: la carpeta es el registro.
- * Cada archivo se llama «AAAA-MM-DD HH.MM – Nombre del emprendimiento.ext» (hora de Bolivia);
- * si sube varios a la vez: «… (1 de 3).jpg».
+ * Cada emprendimiento tiene su SUBCARPETA (se crea sola la primera vez que sube algo). Mayúsculas, tildes
+ * y espacios de más no crean carpetas distintas: «delicias del valle» y «Delicias  del Valle» van juntas.
+ * Dentro, cada archivo se llama «AAAA-MM-DD HH.MM – Nombre del emprendimiento.ext» (hora de Bolivia);
+ * si sube varios a la vez: «… (1 de 3).jpg». Los archivos de PRUEBA quedan sueltos en la carpeta principal.
  * Revisa que cada archivo sea de verdad lo que dice ser (no acepta programas ni archivos raros).
  *
  * ── PRIMERA VEZ ─────────────────────────────────────────────────────────────
@@ -25,7 +27,7 @@
  *   (elige la función en la lista de arriba y toca «Ejecutar»; el resultado sale abajo).
  */
 
-const VERSION_APP = '2.0';
+const VERSION_APP = '2.1';
 const ZONA = 'America/La_Paz';
 // Opcional: ID de una carpeta que ya exista en esta cuenta (lo que va después de /folders/ en su enlace).
 // Vacío = el script crea su propia carpeta la primera vez.
@@ -92,7 +94,8 @@ function subir_(d) {
     const nombre = (id.indexOf('PRUEBA') === 0 ? 'PRUEBA · ' : '') +
       Utilities.formatDate(cuando, ZONA, 'yyyy-MM-dd HH.mm') + ' – ' + limpio_(d.nombre, 80) +
       (total > 1 ? ' (' + parte + ' de ' + total + ')' : '') + '.' + ext;
-    const f = carpeta_().createFile(Utilities.newBlob(bytes, FORMATOS[ext][1], nombre));
+    const destino = id.indexOf('PRUEBA') === 0 ? carpeta_() : subcarpeta_(d.nombre);
+    const f = destino.createFile(Utilities.newBlob(bytes, FORMATOS[ext][1], nombre));
     f.setDescription([
       'Rubro: ' + limpio_(d.rubro, 40), 'Municipio: ' + limpio_(d.municipio, 60), 'IA: ' + limpio_(d.ia, 30),
       'Archivo original: ' + limpio_(d.nombre_original, 120), 'Hora en su equipo: ' + limpio_(d.fecha_local, 40), 'Código de envío: ' + id
@@ -147,6 +150,20 @@ function cupo_() {
   return true;
 }
 
+// Subcarpeta del emprendimiento dentro de la carpeta principal (la crea si no existe).
+// Se recuerda por su ID: si Rafael la renombra o la mueve, los archivos siguen llegando a ella.
+function subcarpeta_(nombre) {
+  const visible = limpio_(nombre, 80), clave = 'sub_' + clave_(visible), props = PropertiesService.getScriptProperties();
+  const id = props.getProperty(clave);
+  if (id) { try { const f = DriveApp.getFolderById(id); if (!f.isTrashed()) return f; } catch (e) {} }
+  const raiz = carpeta_(), it = raiz.getFolders();
+  while (it.hasNext()) { const f = it.next(); if (clave_(f.getName()) === clave_(visible)) { props.setProperty(clave, f.getId()); return f; } }
+  const f = raiz.createFolder(visible);
+  props.setProperty(clave, f.getId());
+  return f;
+}
+function clave_(s) { return String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim(); }
+
 function carpeta_() {
   const props = PropertiesService.getScriptProperties();
   const id = CARPETA_ID || props.getProperty('CARPETA_ID');
@@ -167,11 +184,14 @@ function configuracionInicial() {
 
 function estado() {
   const c = carpeta_();
-  let n = 0, pruebas = 0;
+  let sueltos = 0, pruebas = 0, emp = 0, arch = 0;
   const it = c.getFiles();
-  while (it.hasNext()) { const f = it.next(); n++; if (f.getName().indexOf('PRUEBA') === 0) pruebas++; }
+  while (it.hasNext()) { const f = it.next(); if (f.getName().indexOf('PRUEBA') === 0) pruebas++; else sueltos++; }
+  const sub = c.getFolders();
+  while (sub.hasNext()) { const fs = sub.next().getFiles(); emp++; while (fs.hasNext()) { fs.next(); arch++; } }
   console.log('Recepción: ' + (abierta_() ? 'ABIERTA' : 'CERRADA') + '\nCarpeta: ' + c.getName() + '\n' + c.getUrl() +
-    '\nArchivos en la carpeta: ' + n + (pruebas ? ' (' + pruebas + ' de prueba)' : ''));
+    '\nEmprendimientos con archivos (subcarpetas): ' + emp + '\nArchivos en sus subcarpetas: ' + arch +
+    (sueltos ? '\nArchivos sueltos en la carpeta principal: ' + sueltos : '') + (pruebas ? '\nArchivos de prueba: ' + pruebas : ''));
 }
 
 function abrir() { PropertiesService.getScriptProperties().setProperty('ACTIVA', 'SI'); console.log('Recepción ABIERTA: las emprendedoras pueden subir sus planes.'); }
