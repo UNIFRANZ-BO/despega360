@@ -1,0 +1,1386 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Despega 360 – Arma tu guía IA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{
+  --paper:#FBF6FF; --card:#FFFFFF; --ink:#2A1338; --ink2:#5E4A6E; --line:#E3D5EF;
+  --accent:#5B2A86; --soft:#F1E6FA; --btn:#5B2A86; --btnTxt:#FFFFFF;
+  --naranja:#E2581A; --fucsia:#C81E63; --maiz:#F2B000; --verde:#138A63; --turq:#0E7F96; --rojo:#D1352B; --morado:#5B2A86;
+  --head:#34104F; --headInk:#FFF6E8;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#170C21; --card:#23142F; --ink:#F5ECFB; --ink2:#C7B5D6; --line:#3D2A52;
+    --accent:#CFA6F2; --soft:#2F1B44; --btn:#8A48C4; --head:#24093A;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#170C21; --card:#23142F; --ink:#F5ECFB; --ink2:#C7B5D6; --line:#3D2A52;
+  --accent:#CFA6F2; --soft:#2F1B44; --btn:#8A48C4; --head:#24093A;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;min-height:100%;background:var(--paper);color:var(--ink);
+  font:400 18px/1.55 "Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  -webkit-text-size-adjust:100%}
+h1,h2,h3{font-family:"Baloo 2","Trebuchet MS",system-ui,sans-serif;line-height:1.12;margin:0}
+button,input,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--naranja);outline-offset:3px}
+
+/* ---------- Cabecera con el aguayo ---------- */
+header{background:var(--head);color:var(--headInk);padding:18px 20px 20px}
+.hwrap{max-width:640px;margin:0 auto}
+.marca{font:800 17px/1 "Baloo 2",sans-serif;letter-spacing:.01em;color:#FFC94D;display:flex;align-items:center;gap:8px}
+.marca span{font-size:20px}
+header h1{font-size:clamp(28px,7.2vw,40px);font-weight:800;margin:6px 0 2px}
+header p.sub{margin:0 0 16px;font-size:16px;opacity:.85}
+.weave{display:grid;gap:3px;padding:7px;background:#1A0529;border-radius:10px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+.hilera{--t:14px;height:var(--t);border-radius:2px;position:relative;overflow:hidden;
+  background:repeating-linear-gradient(90deg,rgba(255,255,255,.16) 0 1px,transparent 1px 7px)}
+.hilera::after{content:"";position:absolute;inset:0;clip-path:inset(0 100% 0 0);
+  transition:clip-path .9s cubic-bezier(.65,0,.25,1);
+  background:
+    linear-gradient(135deg,var(--b) 25%,transparent 25%) calc(var(--t) / -2) 0/var(--t) var(--t),
+    linear-gradient(225deg,var(--b) 25%,transparent 25%) calc(var(--t) / -2) 0/var(--t) var(--t),
+    linear-gradient(315deg,var(--b) 25%,transparent 25%) 0 0/var(--t) var(--t),
+    linear-gradient(45deg,var(--b) 25%,transparent 25%) 0 0/var(--t) var(--t),
+    var(--a)}
+.hilera.on::after{clip-path:inset(0 0 0 0)}
+.h1c{--a:#C81E63;--b:#F2B000}.h2c{--a:#E2581A;--b:#5B2A86}.h3c{--a:#138A63;--b:#F2B000}
+.h4c{--a:#0E7F96;--b:#F7D7E6}.h5c{--a:#F2B000;--b:#C81E63}.h6c{--a:#5B2A86;--b:#E2581A}
+.weaveLbl{margin:10px 0 0;font-size:15px;opacity:.9;min-height:1.4em}
+.weaveLbl b{color:#FFC94D;font-weight:700}
+
+/* ---------- Contenido ---------- */
+main{max-width:640px;margin:0 auto;padding:26px 20px 150px}
+.step{display:none}
+.step.active{display:block;animation:entra .35s ease-out}
+@keyframes entra{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.step h2{font-size:clamp(28px,7vw,34px);font-weight:800;margin-bottom:8px;outline:none}
+.step h3{font-size:22px;font-weight:700;margin:28px 0 6px}
+.lead{color:var(--ink2);margin:0 0 20px}
+.hint{color:var(--ink2);font-size:16px;margin:2px 0 10px}
+
+.ruta{list-style:none;margin:22px 0;padding:0;counter-reset:r}
+.ruta li{counter-increment:r;display:grid;grid-template-columns:48px 1fr;gap:14px;align-items:start;padding:12px 0;border-bottom:1px dashed var(--line)}
+.ruta li:last-child{border-bottom:0}
+.ruta li::before{content:counter(r);width:48px;height:48px;border-radius:50%;display:grid;place-items:center;
+  font:800 24px/1 "Baloo 2",sans-serif;color:#fff;background:var(--fucsia)}
+.ruta li:nth-child(2)::before{background:var(--naranja)}
+.ruta li:nth-child(3)::before{background:var(--verde)}
+.ruta b{display:block;font-size:19px}
+.ruta span{color:var(--ink2);font-size:16px}
+
+details.duda{border:2px solid var(--line);border-radius:14px;background:var(--card);margin:10px 0;padding:0 16px}
+details.duda summary{cursor:pointer;padding:14px 0;font-weight:700;list-style:none;display:flex;justify-content:space-between;gap:10px}
+details.duda summary::-webkit-details-marker{display:none}
+details.duda summary::after{content:"+";font:800 24px/1 "Baloo 2",sans-serif;color:var(--accent)}
+details.duda[open] summary::after{content:"–"}
+details.duda p{margin:0 0 14px;color:var(--ink2)}
+
+.nota{display:flex;gap:12px;align-items:flex-start;background:var(--soft);border-radius:14px;padding:14px 16px;margin:18px 0;font-size:16px}
+.nota .ic{font-size:24px;line-height:1}
+.nota.alerta{background:#FFF1E0;color:#5A2A00}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .nota.alerta{background:#3A2210;color:#FFDDB8}}
+
+/* Opciones */
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.opts.una{grid-template-columns:1fr}
+.opt{position:relative;display:flex;gap:12px;align-items:center;text-align:left;width:100%;
+  background:var(--card);border:2px solid var(--line);border-radius:16px;padding:14px 16px;cursor:pointer;
+  transition:border-color .15s,background .15s;min-height:64px}
+.opt .em{font-size:30px;line-height:1;flex:none}
+.opt .tx b{display:block;font-size:18px}
+.opt .tx small{display:block;color:var(--ink2);font-size:15px;line-height:1.35;margin-top:2px}
+.opt[aria-pressed="true"]{border-color:var(--accent);background:var(--soft)}
+.opt[aria-pressed="true"]::after{content:"✓";position:absolute;top:-9px;right:-9px;width:26px;height:26px;border-radius:50%;
+  background:var(--btn);color:#fff;display:grid;place-items:center;font-weight:700;font-size:15px}
+
+/* Campos */
+.campo{margin:22px 0}
+.campo label,.campo .lbl{display:block;font:700 20px/1.2 "Baloo 2",sans-serif}
+.campo input[type=text],.campo input[type=number],textarea{width:100%;background:var(--card);border:2px solid var(--line);
+  border-radius:12px;padding:14px;font-size:18px}
+.campo input:focus,textarea:focus{border-color:var(--accent);outline:none}
+textarea{min-height:150px;resize:vertical;line-height:1.45}
+.err{color:var(--rojo);font-weight:700;font-size:16px;margin:8px 0 0;min-height:0}
+.stepper{display:flex;align-items:center;gap:12px}
+.stepper button{width:56px;height:56px;border-radius:50%;border:2px solid var(--line);background:var(--card);
+  font:800 28px/1 "Baloo 2",sans-serif;color:var(--accent);cursor:pointer}
+.stepper output{min-width:150px;text-align:center;font:700 22px/1.2 "Baloo 2",sans-serif;
+  background:var(--soft);border-radius:12px;padding:12px 10px}
+
+/* Semáforo */
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.escala{display:flex;flex-wrap:wrap;gap:8px 16px;margin:6px 0 18px;font-size:15px;color:var(--ink2)}
+.escala span{display:flex;align-items:center;gap:6px}
+.escala i{width:14px;height:14px;border-radius:50%;display:inline-block}
+.dim{background:var(--card);border:2px solid var(--line);border-radius:16px;padding:16px;margin:12px 0}
+.dim h4{margin:0;font:700 21px/1.2 "Baloo 2",sans-serif}
+.dim p{margin:4px 0 12px;font-size:16px;color:var(--ink2)}
+.luces{display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap}
+.luz{display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:0;padding:0;cursor:pointer;width:64px}
+.luz .c{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;font:800 24px/1 "Baloo 2",sans-serif;
+  color:#fff;opacity:.38;transition:opacity .15s,transform .15s;box-shadow:0 0 0 3px transparent}
+.luz small{font-size:13px;color:var(--ink2);line-height:1.15;text-align:center}
+.luz[aria-pressed="true"] .c{opacity:1;transform:scale(1.08);box-shadow:0 0 0 3px var(--card),0 0 0 6px currentColor}
+.luz.l1{color:var(--rojo)}.luz.l1 .c{background:var(--rojo)}
+.luz.l2{color:#C98F00}.luz.l2 .c{background:var(--maiz);color:#3A2600}
+.luz.l3{color:var(--verde)}.luz.l3 .c{background:var(--verde)}
+.luz.l0 .c{background:transparent;border:2px dashed var(--ink2);color:var(--ink2);font-size:22px}
+.luz.l0{color:var(--ink2)}
+
+/* Final */
+.weave.big .hilera{--t:30px}
+.weave.big{padding:10px;gap:4px;margin:4px 0 22px}
+.resumen{background:var(--card);border:2px solid var(--line);border-radius:16px;padding:6px 16px;margin:18px 0}
+.resumen .fila{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.resumen .fila:last-child{border-bottom:0}
+.resumen .k{font-size:14px;color:var(--ink2)}
+.resumen .v{font-weight:700}
+.cambiar{background:none;border:0;color:var(--accent);font-weight:700;text-decoration:underline;cursor:pointer;padding:8px}
+.puntos{display:inline-flex;gap:4px;vertical-align:middle;margin-left:4px}
+.puntos i{width:14px;height:14px;border-radius:50%;display:inline-block;background:var(--line)}
+.copiar{width:100%;border:0;border-radius:999px;background:var(--naranja);color:#fff;cursor:pointer;
+  font:800 22px/1 "Baloo 2",sans-serif;padding:20px 24px;display:flex;align-items:center;justify-content:center;gap:10px;
+  box-shadow:0 6px 0 #A63A0A;transition:transform .08s,box-shadow .08s}
+.copiar:active{transform:translateY(4px);box-shadow:0 2px 0 #A63A0A}
+.copiar.ok{background:var(--verde);box-shadow:0 6px 0 #0A5A40}
+.estado{font-weight:700;text-align:center;margin:12px 0 0;min-height:1.5em;overflow-wrap:anywhere}
+.abrir{display:flex;justify-content:center;align-items:center;gap:8px;margin:14px 0 0;padding:16px;border-radius:999px;
+  border:2px solid var(--accent);color:var(--accent);font-weight:700;text-decoration:none;font-size:18px}
+.pasos{margin:10px 0 0;padding-left:0;list-style:none;counter-reset:p}
+.pasos li{counter-increment:p;display:grid;grid-template-columns:34px 1fr;gap:10px;padding:8px 0}
+.pasos li::before{content:counter(p);width:30px;height:30px;border-radius:50%;background:var(--soft);color:var(--accent);
+  display:grid;place-items:center;font:800 17px/1 "Baloo 2",sans-serif}
+.claves{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:10px}
+.clave{background:var(--card);border:2px solid var(--line);border-radius:14px;padding:12px 14px}
+.clave code{font:800 20px/1.1 "Baloo 2",sans-serif;color:var(--fucsia);display:block;margin-bottom:4px}
+.clave span{font-size:15px;color:var(--ink2);line-height:1.35;display:block}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .clave code{color:#FF7FB0}}
+.ver textarea{min-height:260px;font-size:14px;margin-bottom:14px}
+.pdfbox{margin:26px 0 10px;padding:18px;border:2px dashed var(--accent);border-radius:16px;background:var(--soft)}
+.pdfbox h3{margin:0 0 4px}
+.pdfbox p{margin:0 0 14px;color:var(--ink2);font-size:16px}
+.pdfbtn{width:100%;border:0;border-radius:999px;background:var(--btn);color:#fff;cursor:pointer;
+  font:800 20px/1 "Baloo 2",sans-serif;padding:18px 22px;display:flex;align-items:center;justify-content:center;gap:10px}
+.pdfbtn:active{transform:translateY(2px)}
+.reiniciar{display:block;margin:30px auto 0;background:none;border:0;color:var(--ink2);text-decoration:underline;cursor:pointer;font-size:16px}
+.pie{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);font-size:13px;color:var(--ink2);line-height:1.45}
+
+/* Navegación inferior */
+nav.barra{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);
+  padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));z-index:5}
+.nwrap{max-width:640px;margin:0 auto;display:flex;gap:10px}
+.nb{border-radius:999px;padding:16px 22px;font:700 19px/1 "Baloo 2",sans-serif;cursor:pointer;border:2px solid var(--line);background:var(--card)}
+.nb.sig{flex:1;background:var(--btn);color:var(--btnTxt);border-color:var(--btn)}
+.nb[hidden]{display:none}
+
+/* ---------- Movimiento y brillo (v1.0) ---------- */
+header{position:relative;overflow:hidden}
+header::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.06;
+  background:
+    linear-gradient(135deg,#FFC94D 25%,transparent 25%) -12px 0/24px 24px,
+    linear-gradient(225deg,#FFC94D 25%,transparent 25%) -12px 0/24px 24px,
+    linear-gradient(315deg,#FFC94D 25%,transparent 25%) 0 0/24px 24px,
+    linear-gradient(45deg,#FFC94D 25%,transparent 25%) 0 0/24px 24px;
+  animation:deriva 60s linear infinite}
+@keyframes deriva{to{background-position:228px 0,228px 0,240px 0,240px 0}}
+.hwrap{position:relative}
+.marca span{display:inline-block;animation:flota 3.2s ease-in-out infinite}
+@keyframes flota{50%{transform:translateY(-4px) rotate(-6deg)}}
+.hilera::before{content:"";position:absolute;inset:0;z-index:1;opacity:0;pointer-events:none;
+  background:linear-gradient(100deg,transparent 35%,rgba(255,255,255,.45) 50%,transparent 65%);transform:translateX(-100%)}
+.hilera.on::before{opacity:1;animation:brillo 5s ease-in-out infinite}
+.hilera:nth-child(2)::before{animation-delay:.25s}.hilera:nth-child(3)::before{animation-delay:.5s}
+.hilera:nth-child(4)::before{animation-delay:.75s}.hilera:nth-child(5)::before{animation-delay:1s}
+@keyframes brillo{0%,55%{transform:translateX(-100%)}85%,100%{transform:translateX(100%)}}
+
+/* Pista del cohete */
+.pista{position:relative;height:6px;border-radius:99px;background:rgba(255,255,255,.12);margin:16px 12px 6px}
+.pista-fill{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:inherit;
+  background:linear-gradient(90deg,#C81E63,#E2581A,#F2B000);box-shadow:0 0 12px rgba(242,176,0,.55);
+  transition:width .9s cubic-bezier(.65,0,.25,1)}
+.cohete{position:absolute;top:50%;left:0;font-size:22px;line-height:1;transform:translate(-50%,-55%) rotate(45deg);
+  transition:left .9s cubic-bezier(.65,0,.25,1);filter:drop-shadow(0 0 6px rgba(255,201,77,.7))}
+.cohete i{display:block;font-style:normal;animation:vibra .5s ease-in-out infinite}
+@keyframes vibra{50%{transform:translate(-1px,1px)}}
+.pista .meta{position:absolute;right:-12px;top:50%;transform:translateY(-50%);font-size:16px;opacity:.55;transition:opacity .4s,transform .4s}
+.pista.llego .meta{opacity:1;transform:translateY(-50%) scale(1.25)}
+
+/* Entrada escalonada de cada paso */
+.step.entra > *, .step.entra .opt{animation:sube .5s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--i,0) * 70ms)}
+.step.entra .opt{animation-delay:calc(var(--i,0) * 70ms + var(--j,0) * 55ms + 60ms)}
+@keyframes sube{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+/* Opciones con más vida */
+.opt{transition:border-color .15s,background .15s,transform .18s,box-shadow .18s}
+@media (hover:hover){.opt:hover{transform:translateY(-2px);box-shadow:0 10px 22px -14px var(--accent);border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}}
+.opt.pop{animation:pop .42s cubic-bezier(.3,1.6,.5,1)}
+.opt.pop .em{animation:salta .55s ease-out}
+.opt.pop[aria-pressed="true"]::after{animation:check .35s cubic-bezier(.3,1.8,.5,1)}
+@keyframes pop{0%{transform:scale(1);box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 50%,transparent)}
+  35%{transform:scale(.96)}70%{transform:scale(1.025)}100%{transform:scale(1);box-shadow:0 0 0 14px transparent}}
+@keyframes salta{30%{transform:translateY(-7px) rotate(-10deg) scale(1.2)}65%{transform:translateY(0) rotate(5deg)}}
+@keyframes check{from{transform:scale(0)}to{transform:scale(1)}}
+.stepper output.bump{animation:bump .3s ease-out}
+@keyframes bump{40%{transform:scale(1.12);background:color-mix(in srgb,var(--maiz) 30%,var(--soft))}}
+.nb.sig{position:relative;overflow:hidden}
+.nb.sig::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 40%,rgba(255,255,255,.28) 50%,transparent 60%);
+  transform:translateX(-100%);animation:brillo 4s ease-in-out infinite}
+.err:not(:empty){animation:tiembla .4s}
+@keyframes tiembla{20%,60%{transform:translateX(-5px)}40%,80%{transform:translateX(5px)}}
+
+/* Final: envío */
+.enviar{margin:24px 0 10px;padding:20px 18px;border-radius:20px;position:relative;overflow:hidden;
+  background:linear-gradient(160deg,var(--soft),var(--card));border:2px solid var(--accent)}
+.enviar::before{content:"";position:absolute;left:0;right:0;top:0;height:7px;
+  background:linear-gradient(90deg,#C81E63 0 20%,#E2581A 20% 40%,#F2B000 40% 60%,#138A63 60% 80%,#0E7F96 80%)}
+.enviar h3{margin:4px 0 4px}
+.enviar p{margin:0 0 16px;color:var(--ink2);font-size:16px}
+.pdfbtn{position:relative;overflow:hidden;box-shadow:0 6px 0 #3A1660;transition:transform .08s,box-shadow .08s,background .3s}
+.pdfbtn:active{transform:translateY(4px);box-shadow:0 2px 0 #3A1660}
+.pdfbtn::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 40%,rgba(255,255,255,.3) 50%,transparent 60%);
+  transform:translateX(-100%);animation:brillo 3.2s ease-in-out infinite}
+.pdfbtn[disabled]{cursor:wait;opacity:.85}
+.pdfbtn.ok{background:var(--verde);box-shadow:0 6px 0 #0A5A40}
+.progreso{list-style:none;margin:16px 0 0;padding:0}
+.progreso li{display:flex;align-items:center;gap:12px;padding:7px 0;font-size:16px;color:var(--ink2);transition:color .2s}
+.progreso li::before{content:"";flex:none;width:22px;height:22px;border-radius:50%;border:2px solid var(--line);
+  display:grid;place-items:center;font:700 13px/1 system-ui;color:#fff}
+.progreso li.on{color:var(--ink);font-weight:700}
+.progreso li.on::before{border-color:var(--accent);border-top-color:transparent;animation:gira .8s linear infinite}
+.progreso li.ok::before{content:"✓";background:var(--verde);border-color:var(--verde)}
+.progreso li.av::before{content:"!";background:var(--maiz);border-color:var(--maiz);color:#3A2600}
+.progreso li.ok,.progreso li.av{color:var(--ink)}
+@keyframes gira{to{transform:rotate(360deg)}}
+.candado{display:flex;gap:14px;align-items:center;margin:18px 0;padding:18px;border:2px dashed var(--line);border-radius:16px;color:var(--ink2);font-size:16px}
+.candado[hidden]{display:none}
+.candado .ic{font-size:30px;animation:flota 2.6s ease-in-out infinite}
+#trasEnvio.abre{animation:sube .6s cubic-bezier(.2,.7,.2,1) both}
+.despegue{position:fixed;left:50%;bottom:-60px;font-size:54px;z-index:30;pointer-events:none;opacity:0;transform:translateX(-50%) rotate(-45deg)}
+.despegue.va{animation:despega 1.6s cubic-bezier(.5,0,.75,0) forwards}
+@keyframes despega{0%{bottom:-60px;opacity:1}20%{bottom:12vh}99%{bottom:115vh;opacity:1}100%{bottom:115vh;opacity:0}}
+#confeti{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:25}
+
+/* Aviso flotante y panel técnico */
+.toast{position:fixed;left:50%;bottom:96px;transform:translate(-50%,20px);opacity:0;z-index:40;max-width:min(92vw,520px);
+  background:var(--head);color:var(--headInk);padding:12px 18px;border-radius:14px;font-size:16px;box-shadow:0 12px 30px -10px rgba(0,0,0,.5);
+  transition:opacity .25s,transform .25s;pointer-events:none}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.ver-app{float:right;opacity:.6;cursor:default;user-select:none;padding:4px 0 4px 10px}
+.modal{position:fixed;inset:0;z-index:50;background:rgba(20,6,32,.6);display:grid;place-items:center;padding:16px}
+.modal[hidden]{display:none}
+.modal .caja{background:var(--card);color:var(--ink);border-radius:18px;padding:20px;width:min(560px,100%);max-height:90vh;overflow:auto}
+.modal h3{margin:0 0 10px}
+.modal .fila2{font-size:14px;color:var(--ink2);word-break:break-all;margin:6px 0}
+.modal .bts{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+.modal .bts button{border-radius:999px;border:2px solid var(--line);background:var(--soft);padding:10px 14px;font-weight:700;cursor:pointer}
+.modal pre{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px;font-size:12px;white-space:pre-wrap;max-height:220px;overflow:auto;margin:0}
+
+@media (prefers-reduced-motion:reduce){
+  .hilera::after,.step.active,.luz .c,.copiar{transition:none;animation:none}
+  *,*::before,*::after{animation:none !important;transition:none !important}
+  .hilera.on::before{opacity:0}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hwrap">
+    <div class="marca"><span aria-hidden="true">🚀</span>Despega 360</div>
+    <h1>Arma tu guía para el Plan de Acción</h1>
+    <p class="sub">Constructor de instrucciones para la inteligencia artificial</p>
+    <div class="weave" id="weave" aria-hidden="true">
+      <div class="hilera h1c"></div><div class="hilera h2c"></div><div class="hilera h3c"></div>
+      <div class="hilera h4c"></div><div class="hilera h5c"></div>
+    </div>
+    <div class="pista" id="pista" aria-hidden="true"><div class="pista-fill" id="pistaFill"></div><span class="cohete" id="cohete"><i>🚀</i></span><span class="meta">⭐</span></div>
+    <p class="weaveLbl" id="weaveLbl" aria-live="polite"></p>
+  </div>
+</header>
+
+<main>
+
+<!-- 0 · Bienvenida -->
+<section class="step" data-id="inicio">
+  <h2 tabindex="-1">Hola, emprendedora 👋</h2>
+  <p class="lead">En esta página preparas el mensaje que le darás a la inteligencia artificial (IA) para que te ayude a ordenar tu Plan de Acción Individualizado.</p>
+  <ol class="ruta">
+    <li><div><b>Responde aquí unas preguntas cortas</b><span>Te toma unos 5 minutos.</span></div></li>
+    <li><div><b>Copia tu instrucción con un botón</b><span>Se arma sola con lo que elegiste.</span></div></li>
+    <li><div><b>Pégala en tu IA y conversa con ella</b><span>Unos 40 minutos. Al final descargas tu plan.</span></div></li>
+  </ol>
+  <details class="duda">
+    <summary>¿Qué es un «prompt»?</summary>
+    <p>Es el mensaje con instrucciones que le escribes a una IA como ChatGPT o Gemini. Mientras más clara es la instrucción, mejor te ayuda. Aquí no tienes que escribirla tú: la armamos juntas.</p>
+  </details>
+  <details class="duda">
+    <summary>¿La IA va a inventar mi plan?</summary>
+    <p>No. La instrucción le pide usar tus palabras y lo que ya escribiste en tus cuadernillos de los Talleres 1 y 2. Si algo no sabes, lo deja pendiente para revisarlo con tu mentora.</p>
+  </details>
+  <div class="nota"><span class="ic" aria-hidden="true">🔒</span><div>Lo que escribas se guarda en este celular o computadora mientras avanzas. Al final, cuando toques «Enviar y guardar en PDF», tu constancia se guarda en tu equipo y una copia llega al equipo de Despega 360. No te pedimos tu nombre, teléfono ni carnet.</div></div>
+</section>
+
+<!-- 1 · Materiales -->
+<section class="step" data-id="amano">
+  <h2 tabindex="-1">Ten a mano tus materiales</h2>
+  <p class="lead">Marca lo que ya tienes contigo. Si te falta algo, igual puedes seguir.</p>
+  <div class="opts una">
+    <button class="opt" data-f="mat" data-multi data-v="Cuadernillo del Taller 1"><span class="em">📘</span><span class="tx"><b>Cuadernillo del Taller 1</b><small>Sobre todo la «Ficha Final: Mi oportunidad de mejora».</small></span></button>
+    <button class="opt" data-f="mat" data-multi data-v="Cuadernillo del Taller 2"><span class="em">📗</span><span class="tx"><b>Cuadernillo del Taller 2</b><small>Sobre todo la «Estrategia comercial en una página» (Paso 8).</small></span></button>
+    <button class="opt" data-f="mat" data-multi data-v="Calculadora de costos"><span class="em">🧮</span><span class="tx"><b>Tu calculadora de costos</b><small>Con tus costos y tu precio.</small></span></button>
+    <button class="opt" data-f="mat" data-multi data-v="Pieza digital"><span class="em">🖼️</span><span class="tx"><b>Tu pieza digital</b><small>La imagen que hiciste para tus redes o WhatsApp.</small></span></button>
+  </div>
+</section>
+
+<!-- 2 · IA -->
+<section class="step" data-id="ia">
+  <h2 tabindex="-1">¿Con qué IA vas a trabajar?</h2>
+  <p class="lead">Elige la que ya tengas en tu celular o computadora. Si no sabes cuál, Gemini funciona con tu cuenta de Gmail.</p>
+  <div class="opts">
+    <button class="opt" data-f="ia" data-v="ChatGPT"><span class="em">💬</span><span class="tx"><b>ChatGPT</b><small>Puede darte tu plan en Word.</small></span></button>
+    <button class="opt" data-f="ia" data-v="Gemini"><span class="em">✨</span><span class="tx"><b>Gemini</b><small>Lo pasas a Google Docs con un botón.</small></span></button>
+    <button class="opt" data-f="ia" data-v="Claude"><span class="em">🌀</span><span class="tx"><b>Claude</b><small>Puede darte tu plan en Word.</small></span></button>
+    <button class="opt" data-f="ia" data-v="Meta AI"><span class="em">🟢</span><span class="tx"><b>Meta AI</b><small>Dentro de WhatsApp. El plan sale como texto.</small></span></button>
+  </div>
+  <p class="err" id="errIa" role="alert"></p>
+
+  <h3>¿Es tu primera vez?</h3>
+  <div class="opts">
+    <button class="opt" data-f="cont" data-v="no"><span class="em">🌱</span><span class="tx"><b>Sí, empiezo hoy</b></span></button>
+    <button class="opt" data-f="cont" data-v="si"><span class="em">🔁</span><span class="tx"><b>Ya empecé y tengo mi código</b></span></button>
+  </div>
+  <div class="campo" id="boxCodigo" hidden>
+    <label for="codigo">Pega aquí tu código para continuar</label>
+    <p class="hint">Es el texto que te dio la IA cuando escribiste «pausa». Empieza con «CÓDIGO PARA CONTINUAR».</p>
+    <textarea id="codigo" data-f="codigo" placeholder="Mantén el dedo aquí y toca «Pegar»"></textarea>
+    <p class="err" id="errCod" role="alert"></p>
+    <label for="nombre2" style="margin-top:18px">Nombre de tu emprendimiento</label>
+    <p class="hint">Con este nombre guardamos tu constancia.</p>
+    <input type="text" id="nombre2" data-f="nombre" maxlength="80" placeholder="Ej.: Delicias del Valle" autocomplete="off">
+    <p class="err" id="errNombre2" role="alert"></p>
+  </div>
+</section>
+
+<!-- 3 · Emprendimiento -->
+<section class="step" data-id="emp">
+  <h2 tabindex="-1">Tu emprendimiento</h2>
+  <p class="lead">Con esto la guía ya no te lo volverá a preguntar. Lo que no sepas, déjalo en blanco.</p>
+  <div class="nota alerta"><span class="ic" aria-hidden="true">✋</span><div>Aquí <b>no</b> van tu nombre, tu teléfono ni tu carnet. Esos datos los llenarás a mano al final, en tu documento.</div></div>
+
+  <div class="campo">
+    <label for="nombre">Nombre de tu emprendimiento</label>
+    <p class="hint">El nombre de tu marca o negocio, no tu nombre personal. Este dato sí es necesario: con él guardamos tu constancia.</p>
+    <input type="text" id="nombre" data-f="nombre" maxlength="80" placeholder="Ej.: Delicias del Valle" autocomplete="off">
+    <p class="err" id="errNombre" role="alert"></p>
+  </div>
+
+  <div class="campo">
+    <span class="lbl">Rubro</span>
+    <div class="opts" style="margin-top:8px">
+      <button class="opt" data-f="rubro" data-v="Artesanías"><span class="em">🏺</span><span class="tx"><b>Artesanías</b></span></button>
+      <button class="opt" data-f="rubro" data-v="Alimentos"><span class="em">🍯</span><span class="tx"><b>Alimentos</b></span></button>
+      <button class="opt" data-f="rubro" data-v="Textiles"><span class="em">🧵</span><span class="tx"><b>Textiles</b></span></button>
+    </div>
+  </div>
+
+  <div class="campo">
+    <span class="lbl">Municipio</span>
+    <div class="opts" style="margin-top:8px">
+      <button class="opt" data-f="muni" data-v="Cochabamba"><span class="em">🏙️</span><span class="tx"><b>Cochabamba</b></span></button>
+      <button class="opt" data-f="muni" data-v="Colcapirhua"><span class="em">🌾</span><span class="tx"><b>Colcapirhua</b></span></button>
+      <button class="opt" data-f="muni" data-v="Quillacollo"><span class="em">⛪</span><span class="tx"><b>Quillacollo</b></span></button>
+      <button class="opt" data-f="muni" data-v="Otro"><span class="em">📍</span><span class="tx"><b>Otro</b></span></button>
+    </div>
+    <div id="boxMuni" hidden style="margin-top:10px">
+      <label for="muniOtro" class="sr">¿Cuál es tu municipio?</label>
+      <input type="text" id="muniOtro" data-f="muniOtro" maxlength="60" placeholder="Escribe tu municipio. Ej.: Sacaba" autocomplete="off">
+    </div>
+  </div>
+
+  <div class="campo">
+    <label for="prod">Tu producto principal</label>
+    <p class="hint">El que más vendes o el que quieres impulsar.</p>
+    <input type="text" id="prod" data-f="prod" maxlength="120" autocomplete="off">
+    <p class="err" id="errProd" role="alert"></p>
+  </div>
+
+  <div class="campo">
+    <span class="lbl">¿Hace cuántos años tienes tu emprendimiento?</span>
+    <div class="stepper" style="margin-top:10px">
+      <button type="button" id="menos" aria-label="Un año menos">−</button>
+      <output id="antigOut" aria-live="polite">Sin dato</output>
+      <button type="button" id="mas" aria-label="Un año más">+</button>
+    </div>
+  </div>
+</section>
+
+
+<!-- 4 · Forma de trabajo -->
+<section class="step" data-id="forma">
+  <h2 tabindex="-1">¿Cómo quieres trabajar?</h2>
+  <p class="lead">Así la guía se acomoda a ti.</p>
+
+  <h3 style="margin-top:6px">¿Cómo quieres empezar?</h3>
+  <div class="opts una">
+    <button class="opt" data-f="modo" data-v="rapido"><span class="em">📸</span><span class="tx"><b>Modo rápido con fotos</b><small>Subes 2 fotos de tus cuadernillos y la guía llena lo que pueda. Solo te pregunta lo que falta.</small></span></button>
+    <button class="opt" data-f="modo" data-v="paso"><span class="em">💬</span><span class="tx"><b>Pregunta por pregunta</b><small>La guía te pregunta todo con calma, una cosa a la vez.</small></span></button>
+  </div>
+
+  <h3>¿Cómo vas a responder?</h3>
+  <p class="hint">Puedes marcar varias.</p>
+  <div class="opts">
+    <button class="opt" data-f="resp" data-multi data-v="escribiendo"><span class="em">⌨️</span><span class="tx"><b>Escribiendo</b></span></button>
+    <button class="opt" data-f="resp" data-multi data-v="voz"><span class="em">🎤</span><span class="tx"><b>Hablando</b><small>Con el micrófono</small></span></button>
+    <button class="opt" data-f="resp" data-multi data-v="fotos"><span class="em">📷</span><span class="tx"><b>Con fotos</b><small>De mis cuadernillos</small></span></button>
+  </div>
+
+  <h3>¿Tienes tiempo de hacerlo todo hoy?</h3>
+  <div class="opts">
+    <button class="opt" data-f="tiempo" data-v="todo"><span class="em">⏱️</span><span class="tx"><b>Sí, tengo unos 40 minutos</b></span></button>
+    <button class="opt" data-f="tiempo" data-v="partes"><span class="em">🧩</span><span class="tx"><b>Lo haré por partes</b></span></button>
+  </div>
+
+  <h3>¿Cómo quieres que te explique?</h3>
+  <div class="opts">
+    <button class="opt" data-f="expl" data-v="corto"><span class="em">✂️</span><span class="tx"><b>Cortito y al grano</b></span></button>
+    <button class="opt" data-f="expl" data-v="ejemplos"><span class="em">🧺</span><span class="tx"><b>Con ejemplos de mi rubro</b></span></button>
+  </div>
+</section>
+
+<!-- 5 · Listo -->
+<section class="step" data-id="listo">
+  <div class="weave big" aria-hidden="true">
+    <div class="hilera h1c on"></div><div class="hilera h2c on"></div><div class="hilera h3c on"></div>
+    <div class="hilera h4c on"></div><div class="hilera h5c on"></div>
+  </div>
+  <h2 tabindex="-1">¡Tu aguayo está completo!</h2>
+  <p class="lead">Tu instrucción ya está lista. Revisa lo que elegiste, envía tu constancia y luego copia tu instrucción.</p>
+
+  <div class="resumen" id="resumen"></div>
+
+  <div class="enviar" id="boxEnviar">
+    <h3>Envía tu constancia</h3>
+    <p>Se descarga un PDF en tu equipo y una copia llega al equipo de Despega 360. Incluye lo que elegiste y la instrucción completa que usarás con tu IA.</p>
+    <button class="pdfbtn" id="btnPdf" type="button"><span aria-hidden="true" id="icoPdf">📄</span><span id="txtPdf">Enviar y guardar en PDF</span></button>
+    <ol class="progreso" id="progreso" hidden>
+      <li data-p="pdf">Preparando tu PDF</li>
+      <li data-p="local">Guardando la copia en tu equipo</li>
+      <li data-p="nube">Enviando al equipo de Despega 360</li>
+    </ol>
+    <p class="estado" id="estadoPdf" aria-live="polite" style="margin-bottom:0"></p>
+  </div>
+
+  <div class="candado" id="candado"><span class="ic" aria-hidden="true">🔒</span><div>Tu instrucción para copiar aparece aquí apenas envíes tu constancia.</div></div>
+
+  <div id="trasEnvio" hidden>
+  <h3>Copia tu instrucción</h3>
+  <button class="copiar" id="btnCopiar" type="button"><span aria-hidden="true">📋</span><span id="txtCopiar">Copiar mi instrucción</span></button>
+  <p class="estado" id="estado" aria-live="polite"></p>
+
+  <h3>Ahora pégala en tu IA</h3>
+  <ol class="pasos" id="pasos"></ol>
+  <a class="abrir" id="abrir" href="#" target="_blank" rel="noopener">Abrir</a>
+
+  <h3>Palabras que puedes escribirle a la guía</h3>
+  <p class="hint">En cualquier momento de la conversación.</p>
+  <div class="claves">
+    <div class="clave"><code>atrás</code><span>Vuelve a la pregunta anterior.</span></div>
+    <div class="clave"><code>resumen</code><span>Te muestra todo lo que llevas.</span></div>
+    <div class="clave"><code>pausa</code><span>Te da un código para seguir otro día. Guárdalo, por ejemplo enviándotelo a ti misma por WhatsApp.</span></div>
+    <div class="clave"><code>no sé</code><span>Lo deja pendiente para tu mentora y sigue.</span></div>
+  </div>
+  <div class="nota"><span class="ic" aria-hidden="true">🔁</span><div>Para seguir otro día, vuelve a esta página, elige «Ya empecé y tengo mi código» y pega tu código. Si la guía escribe algo que tú no dijiste, dile: «eso no lo dije, corrígelo».</div></div>
+
+  <details class="duda ver">
+    <summary>Ver la instrucción completa</summary>
+    <textarea id="preview" readonly aria-label="Instrucción completa"></textarea>
+  </details>
+  </div>
+
+  <button class="reiniciar" id="reiniciar" type="button">Borrar todo y empezar de nuevo</button>
+</section>
+
+<p class="pie"><span class="ver-app" id="verApp">v1.0</span>Programa Despega 360, IFFI – UNIFRANZ/IPEE. Material elaborado con el apoyo financiero de la Unión Europea. Su contenido es responsabilidad exclusiva del IFFI y no refleja necesariamente los puntos de vista de la Unión Europea.</p>
+</main>
+
+<nav class="barra" aria-label="Pasos">
+  <div class="nwrap">
+    <button class="nb" id="atras" type="button">Atrás</button>
+    <button class="nb sig" id="sig" type="button">Siguiente</button>
+  </div>
+</nav>
+
+<canvas id="confeti" aria-hidden="true"></canvas>
+<div class="despegue" id="despegue" aria-hidden="true">🚀</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<div class="modal" id="admin" hidden>
+  <div class="caja" role="dialog" aria-label="Panel técnico">
+    <h3>Panel técnico</h3>
+    <div class="fila2">Servidor: <span id="admUrl"></span></div>
+    <div class="fila2">Constancias pendientes de envío en este equipo: <b id="admCola">0</b></div>
+    <div class="bts">
+      <button data-a="ping" type="button">Probar conexión</button>
+      <button data-a="prueba" type="button">Enviar PDF de prueba</button>
+      <button data-a="flush" type="button">Reenviar pendientes</button>
+      <button data-a="close" type="button">Cerrar</button>
+    </div>
+    <pre id="admLog">Listo.</pre>
+  </div>
+</div>
+
+<script type="text/plain" id="basePrompt">
+# TU ROL
+Eres "Guía Despega 360". Ayudas a una emprendedora de Cochabamba, Colcapirhua o Quillacollo (rubros: artesanías, alimentos o textiles) a completar su PLAN DE ACCIÓN INDIVIDUALIZADO. Ella ya participó en el Taller 1 (Innovación, diversificación y sostenibilidad) y en el Taller 2 (Comercialización, posicionamiento y herramientas digitales) del programa Despega 360 (IFFI – UNIFRANZ/IPEE, con apoyo de la Unión Europea). Casi todas las respuestas ya están en sus dos cuadernillos. Tu trabajo es ayudarla a ordenarlas, no inventarlas.
+
+# CÓMO CONVERSAS
+1. Español sencillo, frases cortas, trato de "tú", tono cálido y respetuoso. Nada de palabras técnicas sin explicarlas con un ejemplo de su rubro.
+2. Haz UNA pregunta a la vez (como máximo dos si son muy cortas y van juntas). Espera su respuesta antes de seguir.
+3. En cada pregunta dile dónde encontrar la respuesta, por ejemplo: "Míralo en tu cuadernillo del Taller 1, Paso 3".
+4. Muestra el avance al inicio de cada bloque: "Bloque 3 de 10 – Mi cliente y mi propuesta de valor".
+5. Ella puede responder escribiendo, dictando por voz o subiendo una foto de la página del cuadernillo. Si sube una foto, transcribe lo escrito y pregúntale: "¿Lo leí bien?".
+6. Al terminar cada bloque, muestra un resumen corto en viñetas y pregunta: "¿Está bien así o quieres cambiar algo?". Solo avanza cuando ella confirme.
+7. Celebra brevemente cada bloque terminado (una frase, sin exagerar).
+
+# REGLAS QUE NUNCA ROMPES
+1. USA SUS PALABRAS. Solo corrige ortografía y puntuación. No cambies el sentido ni agregues beneficios, cifras, clientes o datos que ella no dijo.
+2. NO INVENTES. Si no sabe o no tiene un dato, escribe "[Pendiente – revisar con mi mentora]" y sigue adelante sin presionar.
+3. SI LA RESPUESTA ES MUY GENERAL (ej.: "a todos", "mejorar ventas"), haz UNA sola pregunta para aclarar, con un ejemplo de su rubro. Si responde igual, acéptalo y sigue.
+4. SI TE PIDE IDEAS O AYUDA, ofrece como máximo 3 opciones cortas, márcalas como "sugerencias" y deja que ella elija o escriba la suya. La decisión siempre es de ella.
+5. CÁLCULOS: si das un resultado (costo unitario, precio, puntajes), muestra la operación paso a paso y pide que confirme.
+6. PRIVACIDAD: NO pidas su nombre completo, teléfono, dirección, carnet, contraseñas ni datos de sus clientes. Esos campos quedan como "[Llenar a mano]". Si ella los escribe, no los copies en el plan y recuérdale con amabilidad que los llene a mano al final.
+7. No des consejos legales, tributarios ni sanitarios. Si el tema aparece (por ejemplo, registro sanitario en alimentos), sugiere que lo consulte con su mentora.
+
+# PALABRAS CLAVE QUE ELLA PUEDE USAR EN CUALQUIER MOMENTO
+- "atrás": vuelves a la pregunta anterior.
+- "resumen": muestras todo lo avanzado hasta ahora.
+- "pausa": generas un bloque llamado CÓDIGO PARA CONTINUAR con todo lo respondido. Le explicas que lo copie y lo guarde; para seguir otro día, debe abrir un chat nuevo, pegar este mismo prompt y luego el código.
+- "no sé": anotas "[Pendiente – revisar con mi mentora]" y sigues.
+Si al inicio ella pega un CÓDIGO PARA CONTINUAR, retoma desde la primera pregunta sin responder.
+
+# INICIO (tu primer mensaje)
+Salúdala en 3 o 4 líneas: explica que la ayudarás a armar su Plan de Acción en unos 40 minutos y que al final podrá descargarlo. Pídele que tenga a mano:
+- Su cuadernillo del Taller 1 (sobre todo la "Ficha Final: Mi oportunidad de mejora").
+- Su cuadernillo del Taller 2 (sobre todo la "Estrategia comercial en una página", Paso 8).
+- Su calculadora de costos y su pieza digital.
+- El número de plan y el semáforo inicial que le envió su mentora.
+Luego ofrécele el MODO RÁPIDO: "Si puedes, sube ahora una foto de tu Ficha Final del Taller 1 y otra de tu Estrategia en una página del Taller 2. Yo lleno lo que pueda y solo te pregunto lo que falta". Si sube las fotos, transcribe, prellena los bloques y en cada bloque muestra lo prellenado para que lo confirme, preguntando solo lo que falte. Si no puede, sigue pregunta por pregunta.
+
+# BLOQUES A COMPLETAR (en este orden)
+
+BLOQUE 1 de 10 – Datos de mi emprendimiento
+- Número de plan (01 a 80; se lo dio su mentora).
+- Nombre del emprendimiento (es el nombre comercial; sí se puede escribir).
+- Rubro: Artesanías, Alimentos o Textiles.
+- Municipio: Cochabamba, Colcapirhua o Quillacollo.
+- Producto o servicio principal.
+- Antigüedad del emprendimiento (años).
+- Fecha del Taller 1 y fecha del Taller 2 (si las recuerda).
+Quedan como [Llenar a mano]: nombre de la emprendedora, teléfono/WhatsApp, mentora asignada, enlace a la carpeta de Drive.
+
+BLOQUE 2 de 10 – Mi punto de partida
+a) Semáforo INICIAL (se lo envió su mentora, de la Ficha 360°): nivel 1, 2 o 3 en Innovación, Diversificación, Comercialización, Digitalización y Sostenibilidad. Si no lo tiene, anota [Pendiente – revisar con mi mentora].
+b) Semáforo FINAL: pídele que se califique HOY en cada dimensión, una por una, explicando la escala así:
+   1 = Incipiente: "recién empiezo o casi no lo hago".
+   2 = En desarrollo: "lo hago a veces o a medias".
+   3 = Consolidado: "lo hago siempre y me funciona".
+   Explica cada dimensión con un ejemplo corto de su rubro.
+c) ¿En cuál de las cinco se siente más débil y por qué? (Anótalo como "principal desafío" en esa dimensión).
+d) Síntesis del negocio (Taller 1, Paso 1): su fortaleza principal; la dificultad u oportunidad que quiere mejorar; su síntesis final en 3 oraciones.
+
+BLOQUE 3 de 10 – Mi cliente y mi propuesta de valor
+- Cliente prioritario (Taller 1, Paso 2 / Taller 2, Paso 2).
+- Quién usa, quién decide y quién paga.
+- Necesidad, problema o deseo que atiende.
+- Lo que más valora su cliente: precio, calidad, rapidez, diseño, personalización, confianza o presentación (puede elegir varias).
+- Lo que todavía debe comprobar sobre su cliente.
+- Propuesta de valor: PRIMER BORRADOR y VERSIÓN FINAL (Taller 1, Paso 3).
+Revisa la versión final con estas 4 preguntas y dile cuáles cumple: ¿dice para quién es?, ¿explica un beneficio y no solo una característica?, ¿la diferencia se puede comprobar?, ¿usa palabras que el cliente entiende? Si falta alguna, pregúntale si quiere ajustarla; si no quiere, déjala como está.
+
+BLOQUE 4 de 10 – Mi idea de innovación o diversificación
+- Sus 3 ideas (Taller 1, Paso 4): para cada una, qué cambiaría y qué necesidad atiende.
+- Clasifica cada idea en un tipo (Producto, Presentación, Proceso, Servicio, Canal, Cliente/uso o Diversificación) y pídele que confirme.
+- Puntaje total de cada idea en el Semáforo de decisiones (Taller 1, Paso 5; entre 7 y 21). Asigna el color: 7 a 11 = Rojo (no probar); 12 a 16 = Amarillo (ajustar); 17 a 21 = Verde (probar ya). Si no tiene el puntaje, anota [Pendiente].
+- Idea seleccionada y razón de la elección.
+- Recursos que ya tiene para hacerla y el riesgo principal a vigilar.
+
+BLOQUE 5 de 10 – Mi prueba y lo que aprendí
+- Hipótesis: "Creo que [cliente] valorará [mejora] porque [necesidad]" (Taller 1, Paso 8).
+- Qué prueba hizo, con quién y cuándo; cuánto le costó (Bs).
+- Cuántas personas participaron; lo que más valoraron; la principal dificultad o sugerencia (Taller 2, Paso 1).
+- Aprendizaje clave: "Después de probar…, descubrí que…".
+- Decisión: Mantener, Ajustar, Repetir la prueba o Cambiar.
+- Qué evidencias guardó (fotos, encuesta, pedidos) y en qué carpeta.
+Si no llegó a hacer la prueba, anótalo con honestidad y sigue; no la hagas sentir mal.
+
+BLOQUE 6 de 10 – Mi estrategia comercial
+a) Meta a 30 días (Taller 2, Paso 2): "En 30 días quiero lograr [cantidad] de [consultas / pedidos / ventas / recompras] de [producto]". Indicador principal y fecha límite.
+b) Costos y precio (Taller 2, Paso 3), en Bs por unidad: precio actual, costo unitario, ganancia esperada, precio mínimo sostenible y precio de prueba acordado.
+   Si no tiene el costo unitario, pídele los datos de un lote: materiales, envase, trabajo, otros gastos variables, parte de los costos fijos, y cuántas unidades vendibles salen. Calcula:
+   Costo total del lote = materiales + envase + trabajo + variables + fijos asignados
+   Costo unitario = costo total del lote ÷ unidades vendibles
+   Precio mínimo sostenible = costo unitario + ganancia esperada
+   Muestra la operación y pide confirmación. Si el precio actual está por debajo del costo unitario, díselo con cuidado y sugiere que lo revise con su mentora.
+c) Canales (Taller 2, Paso 4): canal principal y razón; canal complementario y razón.
+d) Nuevo mercado: ¿identificó algún cliente, zona, ocasión de uso o canal que antes no atendía? ¿Cuál? (Sí/No + cuál).
+e) ¿Usa o empezará a usar WhatsApp Business para vender? (Sí/No). ¿Y redes sociales? (Sí/No, cuáles).
+f) Posicionamiento (Taller 2, Paso 5): "Ayudo a [cliente] a [beneficio] mediante [producto], destacándome por [diferencia demostrable]". Evidencia que lo respalda. Mensaje comercial principal con llamado a la acción.
+g) Pieza digital (Taller 2, Paso 6): título o producto; beneficio clave y precio o condición; enlace a la versión editable; enlace al PNG final (si no tiene los enlaces, [Llenar a mano]); canal donde la publicará o publicó.
+
+BLOQUE 7 de 10 – Cuido mis recursos y me preparo ante el clima
+a) Economía circular (Taller 1, Paso 6): qué recurso o pérdida identificó; qué ocurre hoy; qué acción hará; cómo sabrá que mejoró ("Sabré que mejoró si…"). Clasifica la acción como 1·Evitar, 2·Reducir, 3·Reutilizar/reparar o 4·Transformar/recuperar y pide que confirme.
+b) Clima o entorno (Taller 1, Paso 7): "Si ocurre [evento], puede afectar [parte del negocio] y causar [consecuencia]; para prepararme puedo [medida]". Clasifica la medida como Adaptación (prepararse para el impacto), Mitigación (reducir emisiones o el uso de energía/recursos) o Ambas, explicándolo con palabras simples, y pide que confirme.
+Las dos acciones son obligatorias en el plan. Si no tiene ninguna, ayúdala con hasta 3 sugerencias de bajo costo para su rubro y que ella elija.
+
+BLOQUE 8 de 10 – Mi autonomía económica y mis redes
+Explica: "Estas preguntas son sobre ti, no hay respuestas buenas ni malas". Para cada una, respuesta Sí / En parte / No, más un comentario en sus palabras:
+1. ¿Hoy te sientes con más confianza que antes del programa para ofrecer tus productos y negociar el precio?
+2. ¿Identificaste al menos una oportunidad concreta para hacer crecer tu emprendimiento? ¿Cuál?
+3. ¿Usas ahora más que antes WhatsApp, redes u otras herramientas digitales para vender?
+Luego:
+- ¿Qué te limita más para vender o crecer? Opciones: falta de tiempo, tareas de cuidado de la familia, acceso a tecnología o internet, acceso a financiamiento, otra. (Puede elegir varias o ninguna.)
+- ¿Qué apoyo te ayudaría a superarlo?
+- ¿Hiciste algún contacto o alianza con otras participantes (proveedores, compras juntas, ventas cruzadas, ferias)? ¿Cuál? (Sin nombres completos ni teléfonos.)
+
+BLOQUE 9 de 10 – Mi tablero de acciones (30 días)
+Arma una tabla con estas columnas: N°, Acción, Área, Fecha, Responsable, Indicador, Meta, Evidencia, Estado.
+- Filas 1 a 3: sus tres acciones del plan comercial de 30 días (Taller 2, Paso 7). Pregúntale cada una con su fecha, indicador, meta y evidencia. Área: Comercial o Digital, según corresponda.
+- Fila 4: PROPÓN tú la acción de economía circular del Bloque 7 (Área: Economía circular).
+- Fila 5: PROPÓN tú la medida climática del Bloque 7 (Área: Clima).
+- Fila 6 (opcional): la alianza del Bloque 8, si existe (Área: Redes y alianzas).
+Para las filas 4 a 6, completa lo que puedas con lo que ella ya dijo y pídele solo la fecha, la meta y la confirmación. Responsable: "Yo" (salvo que diga otra persona). Estado: "Pendiente" en todas. Todas las fechas deben caer dentro de los próximos 30 días.
+
+BLOQUE 10 de 10 – Cierre
+- Pregunta Sí/No: ¿Asististe al Taller 1? ¿Al Taller 2? ¿Hiciste la prueba y guardaste evidencia? ¿Tienes tu pieza digital terminada (editable y PNG)?
+- Fecha de seguimiento a los 30 días (si ya la acordó con su mentora) y medio: visita, llamada o WhatsApp.
+- Quedan como [Llenar a mano]: observaciones de la mentora y del especialista, el compromiso con su nombre y todas las firmas.
+
+# ENTREGA FINAL
+Cuando termine el Bloque 10, muestra primero un resumen de 5 líneas (idea elegida, meta a 30 días, precio de prueba, acción circular y medida climática) y pregunta si quiere cambiar algo. Cuando confirme, genera el documento completo con esta estructura y estos títulos exactos:
+
+PLAN DE ACCIÓN INDIVIDUALIZADO – DESPEGA 360
+1. Datos del emprendimiento (tabla Campo | Respuesta)
+2. Punto de partida (tabla Dimensión | Inicial (Ficha 360°) | Final (cierre) | Principal desafío detectado; luego tabla Síntesis del negocio)
+3. Cliente prioritario y propuesta de valor (tabla Campo | Respuesta, incluyendo primer borrador y versión final)
+4. Oportunidad de innovación o diversificación (tabla Idea | Tipo | Qué cambiaría | Necesidad que atiende | Puntaje (7–21) | Semáforo; luego idea seleccionada, razón, recursos y riesgo)
+5. Validación y aprendizaje (tabla Campo | Respuesta)
+6. Estrategia comercial (subtítulos: Meta a 30 días, Costos y precio, Canales y mercados, Posicionamiento y mensaje, Pieza digital)
+7. Sostenibilidad: economía circular y clima (dos tablas)
+8. Autonomía económica y redes de colaboración (tabla Pregunta | Respuesta | Comentario; luego barreras, apoyo y alianzas)
+9. Tablero de acciones (tabla de 9 columnas)
+10. Seguimiento, compromiso y firmas (lista de cierre con Sí/No; fecha y medio de seguimiento; texto de compromiso: "Yo, ____________________, me comprometo a ejecutar las acciones de este plan en los próximos 30 días y a compartir las evidencias en la fecha de seguimiento."; tabla de firmas: Emprendedora | Mentora UNIFRANZ | Especialista en asistencia técnica (IPEE) | Visto bueno IFFI, con columnas Nombre, Firma y Fecha vacías)
+Al pie: "Material elaborado con el apoyo financiero de la Unión Europea. Su contenido es responsabilidad exclusiva del IFFI y no refleja necesariamente los puntos de vista de la Unión Europea."
+Todo campo sin respuesta va como [Pendiente – revisar con mi mentora] o [Llenar a mano], nunca vacío ni inventado.
+
+# CÓMO ENTREGAR EL ARCHIVO PARA DESCARGAR
+- Si puedes crear archivos en esta conversación: crea un documento Word (.docx) con el plan completo, tablas con bordes y letra legible, llamado PAI_[N°]_[Rubro]_[Nombre_del_emprendimiento].docx (sin tildes ni espacios), y entrégale el enlace de descarga.
+- Si no puedes crear archivos: muestra el plan completo en un solo mensaje, con tablas en formato markdown, y explícale paso a paso: (1) copia todo el plan; (2) abre un Google Docs nuevo y pégalo; (3) ve a Archivo > Descargar > Microsoft Word (.docx) o PDF. Si estás en Gemini, dile que también puede usar el botón "Compartir y exportar" > "Exportar a Documentos".
+Cierra con 3 recordatorios cortos: llenar a mano los datos personales; guardar el archivo en su carpeta de Drive del programa; enviarlo a su mentora para revisión. Despídete felicitándola por su trabajo.
+</script>
+
+<script>
+(function(){
+  /* ---------- Envío a Drive ----------
+     URL de la aplicación web de Apps Script (termina en /exec). Sin URL la app funciona en
+     modo de prueba: descarga el PDF pero no lo envía. ?api=<url> prueba otra URL sin guardarla. */
+  var VERSION = '1.0';
+  var API_URL_DEFECTO = 'PEGA_AQUI_LA_URL_EXEC';
+  var QS = new URLSearchParams(location.search);
+  var API_URL = (QS.get('api') || API_URL_DEFECTO).trim();
+  var API_OK = /^https:\/\/script\.google(usercontent)?\.com\/.+\/exec$/.test(API_URL);
+  var KEY = 'despega360-constructor-v2';
+  var LS_COLA = 'despega360-cola1';
+  var FINALES = ['cerrada', 'invalido'];
+  var REDUCE = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var STEPS = [
+    {id:'inicio', t:'Bienvenida'},
+    {id:'amano',  t:'Tus materiales'},
+    {id:'ia',     t:'Tu IA'},
+    {id:'emp',    t:'Tu emprendimiento'},
+    {id:'forma',  t:'Cómo quieres trabajar'},
+    {id:'listo',  t:'Tu instrucción'}
+  ];
+  var LAST = STEPS.length - 1;
+  var PH_PROD = {Artesanías:'Ej.: cerámica pintada, aretes, canastas', Alimentos:'Ej.: mermelada de durazno, api, galletas', Textiles:'Ej.: chompas de alpaca, mantas, polleras'};
+
+  var IA = {
+    'ChatGPT': {url:'https://chatgpt.com/', abrir:'Abrir ChatGPT', app:'la app de ChatGPT',
+      nota:'Estás funcionando en ChatGPT. Si en esta cuenta puedes crear archivos, entrégale el plan en Word (.docx); si no, usa la opción de copiarlo a Google Docs.'},
+    'Gemini': {url:'https://gemini.google.com/app', abrir:'Abrir Gemini', app:'la app de Gemini',
+      nota:'Estás funcionando en Gemini. Entrega el plan completo en un solo mensaje con tablas y explícale el botón "Compartir y exportar" > "Exportar a Documentos".'},
+    'Claude': {url:'https://claude.ai/new', abrir:'Abrir Claude', app:'la app de Claude',
+      nota:'Estás funcionando en Claude. Crea el archivo Word (.docx) del plan para que lo descargue.'},
+    'Meta AI': {url:'https://www.meta.ai/', abrir:'Abrir Meta AI', app:'WhatsApp, en el chat de Meta AI (el círculo de colores)',
+      nota:'Estás funcionando en Meta AI dentro de WhatsApp: no puedes crear archivos. Usa mensajes muy cortos. En la entrega final NO uses tablas markdown porque en WhatsApp se ven mal: escribe cada tabla como lista con el formato "Campo: respuesta", y explícale cómo copiarlo a un Google Docs para descargarlo.'}
+  };
+
+  var DEF = {step:0, mat:[], ia:'', cont:'no', codigo:'', nombre:'', rubro:'', muni:'', muniOtro:'', prod:'', antig:'', modo:'', resp:[], tiempo:'', expl:'', enviado:'', envio:''};
+  var S = load();
+
+  function load(){
+    try { var raw = localStorage.getItem(KEY); if (raw){ var o = JSON.parse(raw); return Object.assign({}, DEF, o); } } catch(e){}
+    return JSON.parse(JSON.stringify(DEF));
+  }
+  function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} }
+  function lsGet(k, d){ try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch(e){ return d; } }
+  function lsSet(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch(e){ return false; } }
+
+  var $ = function(s){ return document.querySelector(s); };
+  var $$ = function(s){ return Array.prototype.slice.call(document.querySelectorAll(s)); };
+  var sleep = function(ms){ return new Promise(function(r){ setTimeout(r, ms); }); };
+
+  /* ---------- Opciones ---------- */
+  document.addEventListener('click', function(ev){
+    var b = ev.target.closest('.opt');
+    if (!b) return;
+    var f = b.getAttribute('data-f'), v = b.getAttribute('data-v');
+    if (b.hasAttribute('data-multi')){
+      var arr = S[f] || [];
+      var i = arr.indexOf(v);
+      if (i >= 0) arr.splice(i,1); else arr.push(v);
+      S[f] = arr;
+    } else {
+      S[f] = v;
+      if (f === 'ia') $('#errIa').textContent = '';
+    }
+    b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop');
+    save(); sync();
+  });
+  document.addEventListener('animationend', function(ev){
+    if (ev.target.classList && ev.target.classList.contains('opt') && ev.animationName === 'pop') ev.target.classList.remove('pop');
+  });
+
+  /* ---------- Campos de texto ---------- */
+  $$('input[data-f], textarea[data-f]').forEach(function(el){
+    el.addEventListener('input', function(){
+      S[el.getAttribute('data-f')] = el.value;
+      save(); checkPrivacy();
+      if (el.id === 'codigo') $('#errCod').textContent = '';
+      if (el.getAttribute('data-f') === 'nombre' && el.value.trim()) ['#errNombre','#errNombre2'].forEach(function(s){ if ($(s).textContent.indexOf('Escribe') === 0) $(s).textContent = ''; });
+      // el mismo dato puede estar en dos campos (nombre del emprendimiento)
+      $$('[data-f="' + el.getAttribute('data-f') + '"]').forEach(function(o){ if (o !== el && o.value !== el.value) o.value = el.value; });
+    });
+  });
+
+  function checkPrivacy(){
+    [['nombre','errNombre'],['prod','errProd']].forEach(function(p){
+      var v = (S[p[0]] || '').replace(/[\s.\-]/g,'');
+      var msg = /\d{7,}/.test(v) ? 'Parece un número de teléfono o carnet. Bórralo de aquí: esos datos se llenan a mano.' : '';
+      if (msg || p[0] !== 'nombre' || $('#'+p[1]).textContent.indexOf('teléfono') >= 0) $('#'+p[1]).textContent = msg;
+    });
+  }
+
+  /* ---------- Años ---------- */
+  function antigTxt(){
+    if (S.antig === '' || S.antig === null || S.antig === undefined) return 'Sin dato';
+    var n = Number(S.antig);
+    if (n === 0) return 'Menos de 1 año';
+    return n === 1 ? '1 año' : n + ' años';
+  }
+  function bump(){ var o = $('#antigOut'); o.classList.remove('bump'); void o.offsetWidth; o.classList.add('bump'); }
+  $('#mas').addEventListener('click', function(){ S.antig = (S.antig === '' ? 1 : Math.min(60, Number(S.antig) + 1)); save(); sync(); bump(); });
+  $('#menos').addEventListener('click', function(){ S.antig = (S.antig === '' ? 0 : Math.max(0, Number(S.antig) - 1)); save(); sync(); bump(); });
+
+  /* ---------- Construir la instrucción ---------- */
+  function muniTxt(){ return S.muni === 'Otro' ? val(S.muniOtro, '') : val(S.muni, ''); }
+  function val(x, alt){ return (x !== undefined && x !== null && String(x).trim() !== '') ? String(x).trim() : alt; }
+
+  function buildPrompt(){
+    var base = $('#basePrompt').textContent.trim();
+    var out = [base, ''];
+    var PEND = 'pendiente: pregúntaselo';
+
+    if (S.cont === 'si'){
+      out.push('# RETOMAR UNA CONVERSACIÓN ANTERIOR');
+      out.push('Ella ya avanzó en otro chat y a continuación está su CÓDIGO PARA CONTINUAR. No repitas la bienvenida completa: salúdala en una línea, muéstrale en 3 viñetas cortas dónde se quedó y sigue desde la primera pregunta sin responder.');
+      out.push('');
+      out.push(val(S.codigo, '[sin código]'));
+      out.push('');
+    } else {
+      out.push('# DATOS QUE ELLA YA LLENÓ EN EL CONSTRUCTOR DESPEGA 360');
+      out.push('Estos datos los escribió ella misma. No se los vuelvas a preguntar: en el Bloque 1 muéstralos juntos y pide que los confirme o corrija. Pregunta solo lo que diga "pendiente".');
+      out.push('- Número de plan: no se lo pidas; anótalo como [Llenar a mano].');
+      out.push('- Nombre del emprendimiento: ' + val(S.nombre, PEND));
+      out.push('- Rubro: ' + val(S.rubro, PEND));
+      out.push('- Municipio: ' + (S.muni === 'Otro' ? (muniTxt() ? muniTxt() + ' (es otro municipio: anótalo tal cual)' : 'otro municipio: pregúntale cuál') : val(S.muni, PEND)));
+      out.push('- Producto o servicio principal: ' + val(S.prod, PEND));
+      out.push('- Antigüedad: ' + (antigTxt() === 'Sin dato' ? PEND : antigTxt()));
+      out.push('');
+      out.push('Semáforo INICIAL (Ficha 360°): ella no lo tiene en este momento. En el Bloque 2, parte a), no se lo pidas: anota [Pendiente – revisar con mi mentora] en las cinco dimensiones y pasa directo a la parte b).');
+      out.push('');
+      var todos = ['Cuadernillo del Taller 1','Cuadernillo del Taller 2','Calculadora de costos','Pieza digital'];
+      var tiene = todos.filter(function(m){ return S.mat.indexOf(m) >= 0; });
+      var falta = todos.filter(function(m){ return S.mat.indexOf(m) < 0; });
+      out.push('Materiales que marcó como "tengo a mano": ' + (tiene.length ? tiene.join(', ') : 'ninguno') + '.');
+      if (falta.length) out.push('No tiene a mano: ' + falta.join(', ') + '. No le pidas que los busque; pregúntale igual y acepta lo que recuerde, sin presionar.');
+      out.push('Como ya revisó sus materiales en el constructor, en tu primer mensaje NO repitas la lista de materiales.');
+      out.push('');
+    }
+
+    out.push('# AJUSTES PARA ESTA CONVERSACIÓN');
+    if (IA[S.ia]) out.push('- ' + IA[S.ia].nota);
+    if (S.cont !== 'si'){
+      if (S.modo === 'rapido') out.push('- Ella eligió el MODO RÁPIDO: en tu primer mensaje pídele directamente las 2 fotos (Ficha Final del Taller 1 y Estrategia en una página del Taller 2), sin preguntarle si quiere hacerlo.');
+      if (S.modo === 'paso') out.push('- Ella eligió ir PREGUNTA POR PREGUNTA: no le ofrezcas el modo rápido. Si después sube alguna foto, úsala igual.');
+    }
+    if (S.resp.length){
+      var r = S.resp.map(function(x){ return {escribiendo:'escribiendo', voz:'hablando (dictado por voz)', fotos:'con fotos de sus cuadernillos'}[x]; });
+      out.push('- Responderá principalmente ' + r.join(', ') + '.');
+      if (S.resp.indexOf('voz') >= 0) out.push('- Si dicta por voz, el texto puede llegar con errores: interpreta con cuidado y confirma siempre nombres, cifras y precios antes de anotarlos.');
+    }
+    if (S.tiempo === 'partes') out.push('- Lo hará por partes: al terminar los Bloques 3, 6 y 8, recuérdale en una sola línea que puede escribir "pausa" para guardar su avance.');
+    if (S.tiempo === 'todo') out.push('- Tiene tiempo para hacerlo de una vez; no le recuerdes la pausa salvo que la pida.');
+    if (S.expl === 'corto') out.push('- Prefiere mensajes muy cortos y directos. Da ejemplos solo si te los pide o si no entiende.');
+    if (S.expl === 'ejemplos') out.push('- Prefiere que en cada pregunta le des un ejemplo corto de su rubro.');
+    out.push('- Ella armó esta instrucción con el Constructor Despega 360. Cuando escriba "pausa", después de darle su código recuérdale que para seguir otro día puede volver al constructor, elegir "Ya empecé y tengo mi código" y pegarlo ahí.');
+    out.push('');
+    out.push(S.cont === 'si' ? 'Empieza ahora retomando desde donde se quedó.' : 'Empieza ahora con tu primer mensaje de bienvenida.');
+    return out.join('\n');
+  }
+
+  // Huella de lo que va en el PDF: si cambia algo después de enviar, hay que volver a enviar.
+  function huella(){
+    var t = JSON.stringify([buildPrompt(), S.nombre, S.rubro, muniTxt(), S.prod, S.antig, S.mat, S.ia, S.cont, S.modo, S.resp, S.tiempo, S.expl]);
+    var h = 5381; for (var i = 0; i < t.length; i++) h = ((h << 5) + h + t.charCodeAt(i)) | 0;
+    return (h >>> 0).toString(36);
+  }
+  function yaEnviado(){ return !!S.enviado && S.enviado === huella(); }
+
+  /* ---------- Pantalla final ---------- */
+  function fila(k, v, goto){
+    return '<div class="fila"><div><div class="k">'+k+'</div><div class="v">'+v+'</div></div>'+
+      (goto !== undefined ? '<button class="cambiar" data-goto="'+goto+'">Cambiar</button>' : '')+'</div>';
+  }
+  function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
+  function renderListo(){
+    var h = fila('Tu IA', esc(val(S.ia,'Sin elegir')), 2);
+    if (S.cont === 'si'){
+      h += fila('Forma de empezar', 'Retomas con tu código', 2);
+      h += fila('Tu emprendimiento', esc(val(S.nombre,'Sin nombre')), 2);
+    } else {
+      var emp = [val(S.nombre,'Sin nombre'), val(S.rubro,''), muniTxt()].filter(Boolean).map(esc).join(', ');
+      h += fila('Tu emprendimiento', emp, 3);
+      var modo = {rapido:'Modo rápido con fotos', paso:'Pregunta por pregunta'}[S.modo] || 'La guía te preguntará';
+      var tiempo = {todo:'todo hoy', partes:'por partes'}[S.tiempo];
+      h += fila('Cómo trabajarás', modo + (tiempo ? ', ' + tiempo : ''), 4);
+    }
+    $('#resumen').innerHTML = h;
+
+    var ia = IA[S.ia] || IA['Gemini'];
+    var nombreIA = S.ia || 'tu IA';
+    $('#abrir').href = ia.url;
+    $('#abrir').textContent = ia.abrir;
+    $('#pasos').innerHTML =
+      '<li>Toca «Copiar mi instrucción» aquí arriba.</li>' +
+      '<li>Abre ' + ia.app + '. También puedes usar el botón de abajo.</li>' +
+      '<li>Empieza un chat nuevo.</li>' +
+      '<li>Mantén el dedo sobre el cuadro de escribir y toca «Pegar». En computadora: Ctrl + V.</li>' +
+      '<li>Toca la flecha para enviar. La guía te saludará y empiezan.</li>';
+    $('#preview').value = buildPrompt();
+    $('#txtCopiar').textContent = 'Copiar mi instrucción';
+    $('#btnCopiar').classList.remove('ok');
+    $('#estado').textContent = '';
+    $('#btnCopiar').setAttribute('data-ia', nombreIA);
+    pintarEnvio();
+  }
+
+  function pintarEnvio(){
+    var ok = yaEnviado(), btn = $('#btnPdf');
+    if (btn.disabled) return;   // hay un envío en curso
+    $('#trasEnvio').hidden = !ok;
+    $('#candado').hidden = ok;
+    btn.classList.toggle('ok', ok);
+    $('#icoPdf').textContent = ok ? '✅' : '📄';
+    $('#txtPdf').textContent = ok ? 'Descargar otra copia del PDF' : 'Enviar y guardar en PDF';
+    if (!ok){ $('#progreso').hidden = true; $('#estadoPdf').textContent = S.enviado ? 'Cambiaste algo después de enviar. Vuelve a tocar el botón para enviar tu constancia actualizada.' : ''; }
+  }
+
+  document.addEventListener('click', function(ev){
+    var g = ev.target.closest('[data-goto]');
+    if (g){ go(Number(g.getAttribute('data-goto'))); }
+  });
+
+  /* ---------- Copiar ---------- */
+  function copiado(){
+    var b = $('#btnCopiar');
+    b.classList.add('ok');
+    $('#txtCopiar').textContent = '¡Copiada!';
+    $('#estado').textContent = 'Listo. Ahora pégala en ' + (S.ia || 'tu IA') + '.';
+  }
+  function fallback(text){
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.setAttribute('readonly','');
+    ta.style.position = 'fixed'; ta.style.top = '0'; ta.style.left = '-9999px';
+    document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, text.length);
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch(e){}
+    document.body.removeChild(ta);
+    return ok;
+  }
+  $('#btnCopiar').addEventListener('click', function(){
+    var text = buildPrompt();
+    $('#preview').value = text;
+    function manual(){
+      var d = document.querySelector('details.ver'); d.open = true;
+      var p = $('#preview'); p.focus(); p.select();
+      $('#estado').textContent = 'Tu equipo no dejó copiar solo. En el cuadro de abajo, mantén el dedo sobre el texto, toca «Seleccionar todo» y luego «Copiar».';
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(copiado, function(){ fallback(text) ? copiado() : manual(); });
+    } else {
+      fallback(text) ? copiado() : manual();
+    }
+  });
+
+  /* ---------- Constancia en PDF ---------- */
+  function latin(s){ return String(s).replace(/…/g,'...').replace(/[–—]/g,'-').replace(/[“”]/g,'"').replace(/ /g,' ').replace(/[^\x00-\xFF]/g,''); }
+  function slug(s){ return String(s).normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^A-Za-z0-9]+/g,'_').replace(/^_+|_+$/g,''); }
+
+  // jsPDF viene de cdnjs; si no cargó, se intenta una vez desde jsDelivr.
+  function asegurarJsPdf(){
+    if (window.jspdf && window.jspdf.jsPDF) return Promise.resolve(true);
+    return new Promise(function(res){
+      var s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js';
+      s.onload = function(){ res(!!(window.jspdf && window.jspdf.jsPDF)); };
+      s.onerror = function(){ res(false); };
+      document.head.appendChild(s);
+      setTimeout(function(){ res(!!(window.jspdf && window.jspdf.jsPDF)); }, 15000);
+    });
+  }
+
+  function crearPdf(envioId){
+    var doc = new window.jspdf.jsPDF({unit:'mm', format:'a4'});
+    var W = 210, M = 18, y = 0;
+
+    // Franja de aguayo
+    var cols = [['#C81E63','#F2B000'],['#E2581A','#5B2A86'],['#138A63','#F2B000'],['#0E7F96','#F7D7E6'],['#F2B000','#C81E63'],['#5B2A86','#E2581A']];
+    var h = 3.4;
+    cols.forEach(function(c, i){
+      var yy = i * h, cy = yy + h/2;
+      doc.setFillColor(c[0]); doc.rect(0, yy, W, h, 'F');
+      doc.setFillColor(c[1]);
+      for (var x = h/2; x < W; x += h * 1.6){
+        doc.triangle(x - h*0.42, cy, x + h*0.42, cy, x, yy + 0.25, 'F');
+        doc.triangle(x - h*0.42, cy, x + h*0.42, cy, x, yy + h - 0.25, 'F');
+      }
+    });
+
+    y = 34;
+    doc.setTextColor('#34104F'); doc.setFont('helvetica','bold'); doc.setFontSize(22);
+    doc.text('Despega 360', M, y);
+    y += 8; doc.setFontSize(14); doc.setTextColor('#5B2A86');
+    doc.text(latin('Constancia de preparación del Plan de Acción Individualizado'), M, y);
+    y += 6; doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor('#5E4A6E');
+    var fecha = new Date().toLocaleString('es-BO', {day:'numeric', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit'});
+    doc.text(latin('Generada el ' + fecha + ' con el Constructor Despega 360.'), M, y);
+    y += 4.5; doc.setFontSize(8.5); doc.setTextColor('#8A7899');
+    doc.text(latin('Código de envío: ' + envioId), M, y);
+    y += 2;
+
+    function salto(n){ if (y + n > 272){ doc.addPage(); y = 20; } }
+    function sec(t){
+      y += 3.5; salto(14);
+      doc.setFillColor('#F1E6FA'); doc.roundedRect(M, y, W - 2*M, 8, 1.5, 1.5, 'F');
+      doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor('#5B2A86');
+      doc.text(latin(t), M + 3, y + 5.5);
+      y += 12;
+    }
+    function row(k, v, color){
+      var lines = doc.splitTextToSize(latin(v), W - 2*M - 62);
+      salto(lines.length * 5 + 3);
+      doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor('#5E4A6E');
+      doc.text(latin(k), M, y);
+      var x = M + 58;
+      if (color){ doc.setFillColor(color); doc.circle(x + 1.6, y - 1.3, 1.9, 'F'); x += 6; }
+      doc.setFont('helvetica','normal'); doc.setFontSize(11); doc.setTextColor('#2A1338');
+      doc.text(lines, x, y);
+      y += lines.length * 4.6 + 1.9;
+    }
+
+    var P = '[Pendiente]';
+    sec('1. Datos del emprendimiento');
+    row('Emprendimiento', val(S.nombre, P));
+    row('Rubro', val(S.rubro, P));
+    row('Municipio', muniTxt() || P);
+    row('Producto principal', val(S.prod, P));
+    row('Antigüedad', antigTxt() === 'Sin dato' ? P : antigTxt());
+
+    sec('2. Cómo trabajará con la guía');
+    row('Herramienta de IA', val(S.ia, P));
+    if (S.cont === 'si') row('Forma de empezar', 'Retoma una conversación anterior con su código');
+    else row('Forma de empezar', {rapido:'Modo rápido con fotos', paso:'Pregunta por pregunta'}[S.modo] || P);
+    var resp = S.resp.map(function(x){ return {escribiendo:'escribiendo', voz:'hablando', fotos:'con fotos'}[x]; });
+    row('Responderá', resp.length ? resp.join(', ') : P);
+    row('Tiempo', {todo:'Todo en una sesión (unos 40 min)', partes:'Por partes'}[S.tiempo] || P);
+    row('Explicaciones', {corto:'Cortas y directas', ejemplos:'Con ejemplos de su rubro'}[S.expl] || P);
+
+    sec('3. Materiales que tenía a mano');
+    var MATS = ['Cuadernillo del Taller 1','Cuadernillo del Taller 2','Calculadora de costos','Pieza digital'];
+    var tenia = MATS.filter(function(m){ return S.mat.indexOf(m) >= 0; });
+    var falta = MATS.filter(function(m){ return S.mat.indexOf(m) < 0; });
+    row('Tenía a mano', tenia.length ? tenia.join(', ') : 'Nada marcado');
+    row('Le faltaba', falta.length ? falta.join(', ') : 'Nada');
+
+    sec('4. Siguiente paso');
+    var sig = doc.splitTextToSize(latin('Pegar la instrucción en ' + (S.ia || 'su IA') + ', completar los 10 bloques del Plan de Acción Individualizado, descargar el plan y guardarlo en su carpeta del programa.'), W - 2*M);
+    salto(sig.length * 5 + 2); doc.setFont('helvetica','normal'); doc.setFontSize(11); doc.setTextColor('#2A1338');
+    doc.text(sig, M, y); y += sig.length * 5;
+
+    // Anexo: instrucción completa que se pega en la IA
+    doc.addPage(); y = 20;
+    doc.setFillColor('#5B2A86'); doc.roundedRect(M, y, W - 2*M, 10, 1.5, 1.5, 'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor('#FFFFFF');
+    doc.text(latin('Anexo: instrucción completa usada en ' + (S.ia || 'la IA')), M + 3, y + 6.8);
+    y += 16;
+    var LH = 3.9;
+    buildPrompt().split('\n').forEach(function(ln){
+      if (ln.trim() === ''){ y += 1.8; return; }
+      var titulo = /^#\s/.test(ln) || /^BLOQUE \d+ de 10/.test(ln) || /^PLAN DE ACCI/.test(ln);
+      if (titulo){
+        y += 1.5;
+        doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor('#5B2A86');
+      } else {
+        doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor('#2A1338');
+      }
+      var sangria = /^\s+/.test(ln) ? 5 : 0;
+      var partes = doc.splitTextToSize(latin(ln.replace(/^#\s*/,'').trim()), W - 2*M - sangria);
+      partes.forEach(function(p){
+        if (y + LH > 274){ doc.addPage(); y = 20; }
+        doc.text(p, M + sangria, y); y += LH;
+      });
+      if (titulo) y += 0.8;
+    });
+
+    var pie = doc.splitTextToSize(latin('Programa Despega 360, IFFI - UNIFRANZ/IPEE. Material elaborado con el apoyo financiero de la Unión Europea. Su contenido es responsabilidad exclusiva del IFFI y no refleja necesariamente los puntos de vista de la Unión Europea.'), W - 2*M);
+    var np = doc.getNumberOfPages();
+    for (var p = 1; p <= np; p++){
+      doc.setPage(p);
+      doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor('#8A7899');
+      doc.text(latin('Página ' + p + ' de ' + np), W - M, 277, {align:'right'});
+      doc.setDrawColor('#E3D5EF'); doc.line(M, 280, W - M, 280);
+      doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor('#8A7899');
+      doc.text(pie, M, 284);
+    }
+
+    var name = ['Despega360', 'Plan_de_Accion', slug(S.rubro || ''), slug(S.nombre || '')].filter(Boolean).join('_') + '.pdf';
+    return {doc: doc, name: name};
+  }
+
+  /* ---------- Comunicación con Apps Script ----------
+     1) POST text/plain (sin preflight)  2) POST no-cors + verificación por JSONP
+     3) si todo falla, el envío queda en cola en este equipo y se reintenta solo. */
+  function fetchTO(url, opt, ms){
+    var ac = new AbortController(), t = setTimeout(function(){ ac.abort(); }, ms);
+    opt.signal = ac.signal;
+    return fetch(url, opt).finally(function(){ clearTimeout(t); });
+  }
+  function jsonp(params, ms){
+    return new Promise(function(res, rej){
+      var cb = '__jp' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+      var s = document.createElement('script'), done = false, t;
+      function clean(){ done = true; window[cb] = function(){}; s.remove(); clearTimeout(t); }
+      window[cb] = function(d){ if (done) return; clean(); res(d); };
+      var u = new URL(API_URL);
+      Object.keys(params).forEach(function(k){ u.searchParams.set(k, params[k]); });
+      u.searchParams.set('callback', cb); u.searchParams.set('_', Date.now());
+      s.src = u.toString(); s.async = true;
+      s.onerror = function(){ if (!done){ clean(); rej(new Error('jsonp')); } };
+      t = setTimeout(function(){ if (!done){ clean(); rej(new Error('timeout')); } }, ms || 15000);
+      document.head.appendChild(s);
+    });
+  }
+  function verificar(id){ return jsonp({action:'verificar', id:id}, 12000).then(function(j){ return !!(j && j.ok && j.existe); }, function(){ return false; }); }
+  function finalErr(j){ var e = new Error(j.codigo); e.final = true; return e; }
+
+  async function subir(p, log){
+    log = log || function(){};
+    if (!API_OK) throw new Error('sin-url');
+    var body = JSON.stringify({action:'subir', data:p});
+    try {
+      var r = await fetchTO(API_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:body, redirect:'follow'}, 45000);
+      var j = await r.json(); log('POST: ' + JSON.stringify(j));
+      if (j && j.ok) return j;
+      if (j && j.ok === false && FINALES.indexOf(j.codigo) >= 0) throw finalErr(j);
+    } catch(e){ if (e.final) throw e; log('POST cors falló: ' + e.message); }
+    try { await fetchTO(API_URL, {method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:body}, 45000); log('POST no-cors enviado'); }
+    catch(e){ log('POST no-cors falló: ' + e.message); }
+    var esperas = [1500, 3000, 5000];
+    for (var i = 0; i < esperas.length; i++){ await sleep(esperas[i]); if (await verificar(p.id)){ log('Verificado en Drive'); return {ok:true, id:p.id, via:'verificar'}; } }
+    throw new Error('no-enviado');
+  }
+
+  function cola(){ return lsGet(LS_COLA, []); }
+  function encolar(p){ var c = cola().filter(function(x){ return x.id !== p.id; }); c.push(p); return lsSet(LS_COLA, c); }
+  function sacar(id){ lsSet(LS_COLA, cola().filter(function(x){ return x.id !== id; })); }
+  var flushing = false;
+  async function flushCola(log){
+    if (flushing || !API_OK) return 0;
+    flushing = true; var ok = 0;
+    try {
+      var c = cola();
+      for (var i = 0; i < c.length; i++){
+        try { await subir(c[i], log); sacar(c[i].id); ok++; }
+        catch(e){ if (e.final){ sacar(c[i].id); if (log) log('Descartado ' + c[i].id + ': ' + e.message); } else if (log) log('Pendiente ' + c[i].id + ' sigue sin enviarse'); }
+      }
+    } finally { flushing = false; }
+    return ok;
+  }
+
+  function paso(k, estado){
+    var li = document.querySelector('#progreso [data-p="' + k + '"]');
+    li.classList.remove('on','ok','av'); if (estado) li.classList.add(estado);
+  }
+  function nuevoId(pref){ return (pref || 'D360') + '-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7); }
+
+  $('#btnPdf').addEventListener('click', async function(){
+    var est = $('#estadoPdf'), btn = $('#btnPdf');
+    if (btn.disabled) return;
+    if (!val(S.nombre, '')){ est.textContent = 'Falta el nombre de tu emprendimiento. Toca «Cambiar» en «Tu emprendimiento».'; return; }
+
+    // Ya enviada y sin cambios: solo otra copia local
+    if (yaEnviado()){
+      if (!(await asegurarJsPdf())){ est.textContent = 'No se pudo preparar el PDF. Revisa tu conexión a internet y vuelve a tocar el botón.'; return; }
+      var c = crearPdf(S.envio);
+      try { c.doc.save(c.name); est.textContent = 'Descargamos otra copia: ' + c.name + '. Tu constancia ya estaba enviada.'; }
+      catch(e){ est.textContent = 'No se pudo guardar el PDF en este equipo. Prueba abriendo la página en Chrome.'; }
+      return;
+    }
+
+    btn.disabled = true; $('#txtPdf').textContent = 'Un momento…';
+    $('#progreso').hidden = false; ['pdf','local','nube'].forEach(function(k){ paso(k, ''); });
+    est.textContent = '';
+    paso('pdf', 'on');
+    if (!(await asegurarJsPdf())){
+      paso('pdf', 'av'); btn.disabled = false; pintarEnvio(); $('#progreso').hidden = false;
+      est.textContent = 'No se pudo preparar el PDF. Revisa tu conexión a internet y vuelve a tocar el botón.';
+      return;
+    }
+    var id = nuevoId(), ahora = new Date();
+    var pdf = crearPdf(id);
+    var b64 = pdf.doc.output('datauristring').split(',')[1];
+    var payload = {id:id, nombre:val(S.nombre,''), rubro:S.rubro, municipio:muniTxt(), ia:S.ia,
+      ts:ahora.getTime(), fecha_local:ahora.toLocaleString('es-BO'), version:VERSION, pdf:b64};
+    await sleep(350); paso('pdf', 'ok');
+
+    // Primero queda en cola (si la página se cierra a medio camino, se reenvía al volver a abrirla)
+    if (API_OK) encolar(payload);
+    paso('local', 'on'); await sleep(250);
+    var local = true;
+    try { pdf.doc.save(pdf.name); } catch(e){ local = false; }
+    paso('local', local ? 'ok' : 'av');
+
+    paso('nube', 'on');
+    var res = 'ok';
+    if (!API_OK){ await sleep(900); res = 'prueba'; }
+    else {
+      try { await subir(payload); sacar(id); }
+      catch(e){ if (e.final){ sacar(id); res = e.message; } else res = 'cola'; }
+    }
+    paso('nube', res === 'ok' || res === 'prueba' ? 'ok' : 'av');
+
+    S.enviado = huella(); S.envio = id; save();
+    btn.disabled = false; pintarEnvio();
+    $('#progreso').hidden = false;
+    var msgLocal = local ? 'Tu PDF se guardó como ' + pdf.name + ' (en tus Descargas). ' : 'No se pudo descargar el PDF en este equipo; prueba luego con «Descargar otra copia». ';
+    var msgNube = {
+      ok: '¡Y tu constancia ya llegó al equipo de Despega 360!',
+      prueba: '(Modo de prueba: la copia no se envió a Drive.)',
+      cola: 'No pudimos enviar la copia por la conexión: se enviará sola la próxima vez que abras esta página con internet.',
+      cerrada: 'La recepción de constancias está cerrada, así que la copia no se envió. Igual puedes seguir con tu IA.',
+      invalido: 'La copia no pudo enviarse. Avísale a tu mentora y guarda tu PDF.'
+    }[res] || '';
+    est.textContent = msgLocal + msgNube;
+    $('#trasEnvio').classList.remove('abre'); void $('#trasEnvio').offsetWidth; $('#trasEnvio').classList.add('abre');
+    if (res === 'ok' || res === 'prueba'){ despegar(); confeti(170); }
+    else confeti(60);
+  });
+
+  $('#reiniciar').addEventListener('click', function(){
+    if (!confirm('¿Borrar todo lo que elegiste y empezar de nuevo?')) return;
+    S = JSON.parse(JSON.stringify(DEF));
+    try { localStorage.removeItem(KEY); } catch(e){}
+    $$('input[data-f], textarea[data-f]').forEach(function(el){ el.value = ''; });
+    go(0);
+  });
+
+  /* ---------- Efectos ---------- */
+  var cv = $('#confeti'), cx = cv.getContext('2d'), piezas = [], anim = 0;
+  var TONOS = ['#C81E63','#E2581A','#F2B000','#138A63','#0E7F96','#5B2A86','#F7D7E6'];
+  function confeti(n){
+    if (REDUCE) return;
+    var dpr = window.devicePixelRatio || 1;
+    cv.width = innerWidth * dpr; cv.height = innerHeight * dpr; cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    for (var i = 0; i < n; i++){
+      piezas.push({x: innerWidth/2 + (Math.random()-.5)*innerWidth*.4, y: innerHeight*.35, vx:(Math.random()-.5)*13, vy: -Math.random()*13 - 4,
+        s: 6 + Math.random()*8, r: Math.random()*6.28, vr:(Math.random()-.5)*.35, c: TONOS[i % TONOS.length], f: Math.random() < .55, v: 1});
+    }
+    if (!anim) anim = requestAnimationFrame(cuadro);
+  }
+  function cuadro(){
+    cx.clearRect(0, 0, innerWidth, innerHeight);
+    piezas = piezas.filter(function(p){ return p.y < innerHeight + 30 && p.v > 0; });
+    piezas.forEach(function(p){
+      p.vy += .32; p.vx *= .99; p.x += p.vx; p.y += p.vy; p.r += p.vr; if (p.vy > 0) p.v -= .004;
+      cx.save(); cx.translate(p.x, p.y); cx.rotate(p.r); cx.globalAlpha = Math.max(0, Math.min(1, p.v * 1.4)); cx.fillStyle = p.c;
+      if (p.f){ cx.beginPath(); cx.moveTo(0, -p.s/2); cx.lineTo(p.s/2.4, 0); cx.lineTo(0, p.s/2); cx.lineTo(-p.s/2.4, 0); cx.closePath(); cx.fill(); }   // rombo de aguayo
+      else cx.fillRect(-p.s/2, -p.s/5, p.s, p.s/2.5);
+      cx.restore();
+    });
+    anim = piezas.length ? requestAnimationFrame(cuadro) : 0;
+    if (!anim) cx.clearRect(0, 0, innerWidth, innerHeight);
+  }
+  function despegar(){
+    if (REDUCE) return;
+    var d = $('#despegue'); d.classList.remove('va'); void d.offsetWidth; d.classList.add('va');
+  }
+  function tejerFinal(){
+    var rows = $$('.weave.big .hilera');
+    rows.forEach(function(r){ r.classList.remove('on'); });
+    rows.forEach(function(r, i){ setTimeout(function(){ r.classList.add('on'); }, 250 + i * 190); });
+    setTimeout(function(){ confeti(90); }, 250 + rows.length * 190);
+  }
+  var tt;
+  function toast(m){ var t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(tt); tt = setTimeout(function(){ t.classList.remove('on'); }, 4200); }
+
+  // Índices para la entrada escalonada
+  $$('.step').forEach(function(sec){
+    Array.prototype.forEach.call(sec.children, function(ch, i){ ch.style.setProperty('--i', Math.min(i, 10)); });
+    Array.prototype.forEach.call(sec.querySelectorAll('.opts'), function(o){ Array.prototype.forEach.call(o.children, function(b, j){ b.style.setProperty('--j', j); }); });
+  });
+
+  /* ---------- Navegación ---------- */
+  function validar(){
+    var s = STEPS[S.step].id;
+    if (s === 'ia'){
+      if (!S.ia){ $('#errIa').textContent = 'Elige tu IA para seguir. Así te damos los pasos correctos.'; return false; }
+      if (S.cont === 'si' && !val(S.codigo,'')){ $('#errCod').textContent = 'Pega tu código, o elige «Sí, empiezo hoy».'; $('#codigo').focus(); return false; }
+      if (S.cont === 'si' && !val(S.nombre,'')){ $('#errNombre2').textContent = 'Escribe el nombre de tu emprendimiento.'; $('#nombre2').focus(); return false; }
+    }
+    if (s === 'emp' && !val(S.nombre,'')){
+      $('#errNombre').textContent = 'Escribe el nombre de tu emprendimiento para seguir.'; $('#nombre').focus(); return false;
+    }
+    return true;
+  }
+  function next(){
+    if (!validar()) return;
+    var s = STEPS[S.step].id;
+    if (s === 'ia' && S.cont === 'si') return go(LAST);
+    go(Math.min(LAST, S.step + 1));
+  }
+  function back(){
+    if (S.step === LAST && S.cont === 'si') return go(2);
+    go(Math.max(0, S.step - 1));
+  }
+  function go(i){
+    var antes = S.step;
+    S.step = i; save(); sync();
+    window.scrollTo(0,0);
+    var sec = document.querySelector('.step.active');
+    if (sec && !REDUCE){ sec.classList.remove('entra'); void sec.offsetWidth; sec.classList.add('entra'); setTimeout(function(){ sec.classList.remove('entra'); }, 1400); }
+    var h = document.querySelector('.step.active h2'); if (h) h.focus({preventScroll:true});
+    if (i === LAST && antes !== LAST) tejerFinal();
+  }
+  $('#sig').addEventListener('click', next);
+  $('#atras').addEventListener('click', back);
+
+  /* ---------- Sincronizar la vista ---------- */
+  function sync(){
+    $$('.step').forEach(function(sec, i){ sec.classList.toggle('active', i === S.step); });
+
+    $$('.opt').forEach(function(b){
+      var f = b.getAttribute('data-f'), v = b.getAttribute('data-v');
+      var on = b.hasAttribute('data-multi') ? (S[f] || []).indexOf(v) >= 0 : S[f] === v;
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    $$('input[data-f], textarea[data-f]').forEach(function(el){
+      var v = S[el.getAttribute('data-f')];
+      if (document.activeElement !== el && el.value !== (v || '')) el.value = v || '';
+    });
+    $('#boxCodigo').hidden = S.cont !== 'si';
+    $('#antigOut').textContent = antigTxt();
+    $('#prod').placeholder = PH_PROD[S.rubro] || 'Ej.: lo que más vendes';
+
+    var rows = $$('#weave .hilera');
+    var n = S.step >= LAST ? LAST : Math.max(0, S.step - 1);
+    rows.forEach(function(r, i){ r.classList.toggle('on', i < n); });
+    $('#weaveLbl').innerHTML = S.step === 0
+      ? 'Cada paso que completes teje una hilera de tu aguayo.'
+      : (S.step === LAST ? '<b>Aguayo completo.</b> Tu instrucción está lista.' : '<b>Paso ' + S.step + ' de ' + LAST + ':</b> ' + STEPS[S.step].t);
+    var pct = Math.round(S.step / LAST * 100);
+    $('#pistaFill').style.width = pct + '%';
+    $('#cohete').style.left = pct + '%';
+    $('#pista').classList.toggle('llego', S.step === LAST);
+
+    $('#atras').hidden = S.step === 0;
+    $('#sig').hidden = S.step === LAST;
+    $('#sig').textContent = S.step === 0 ? 'Empezar' : (S.step === LAST - 1 || (S.step === 2 && S.cont === 'si') ? 'Armar mi instrucción' : 'Siguiente');
+
+    $('#boxMuni').hidden = S.muni !== 'Otro';
+    if (S.step === LAST) renderListo();
+    checkPrivacy();
+  }
+
+  /* ---------- Panel técnico (?admin=1 o tres toques en «v1.0») ---------- */
+  function admLog(m){ var l = $('#admLog'); l.textContent = (l.textContent === 'Listo.' ? '' : l.textContent + '\n') + m; l.scrollTop = 1e9; }
+  function abrirAdmin(){
+    $('#admUrl').textContent = API_OK ? API_URL + (QS.get('api') ? '  (de ?api=)' : '  (del archivo)') : 'SIN CONFIGURAR (modo de prueba): falta la URL /exec en API_URL_DEFECTO';
+    $('#admCola').textContent = cola().length; $('#admLog').textContent = 'Listo.'; $('#admin').hidden = false;
+  }
+  var toques = [];
+  $('#verApp').addEventListener('click', function(){
+    var t = Date.now(); toques = toques.filter(function(x){ return t - x < 900; }); toques.push(t);
+    if (toques.length >= 3){ toques = []; abrirAdmin(); }
+  });
+  $('#admin').addEventListener('click', async function(e){
+    if (e.target.id === 'admin') { $('#admin').hidden = true; return; }
+    var a = e.target.getAttribute('data-a'); if (!a) return;
+    if (a === 'close'){ $('#admin').hidden = true; return; }
+    if (!API_OK){ admLog('Sin URL del servidor: no hay nada que probar.'); return; }
+    if (a === 'ping'){
+      admLog('Probando…');
+      try { admLog(JSON.stringify(await jsonp({action:'ping'}))); }
+      catch(er){ admLog('Sin respuesta (' + er.message + '). Revisa que la implementación tenga acceso «Cualquier persona».'); }
+    }
+    if (a === 'prueba'){
+      if (!(await asegurarJsPdf())){ admLog('No cargó jsPDF.'); return; }
+      var id = nuevoId('PRUEBA'), d = new window.jspdf.jsPDF();
+      d.text('Prueba de conexion Despega 360 - ' + new Date().toLocaleString('es-BO'), 15, 20);
+      admLog('Enviando ' + id + '…');
+      try { await subir({id:id, nombre:'Prueba de conexión', ts:Date.now(), fecha_local:new Date().toLocaleString('es-BO'), version:VERSION, pdf:d.output('datauristring').split(',')[1]}, admLog); admLog('OK: revisa la carpeta de Drive (archivo que empieza con PRUEBA).'); }
+      catch(er){ admLog('No se envió: ' + er.message); }
+    }
+    if (a === 'flush'){ admLog('Reenviando…'); var k = await flushCola(admLog); admLog(k + ' enviada(s).'); $('#admCola').textContent = cola().length; }
+  });
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape') $('#admin').hidden = true; });
+
+  sync();
+  if (S.step === LAST) setTimeout(function(){ $$('.weave.big .hilera').forEach(function(r){ r.classList.add('on'); }); }, 0);
+  if (QS.get('admin') === '1') setTimeout(abrirAdmin, 500);
+
+  // Constancias que quedaron pendientes en este equipo
+  function intentarCola(){
+    if (!cola().length) return;
+    flushCola().then(function(k){ if (k) toast(k === 1 ? 'Tu constancia pendiente ya llegó al equipo de Despega 360. ✅' : k + ' constancias pendientes ya llegaron al equipo de Despega 360. ✅'); });
+  }
+  setTimeout(intentarCola, 1500);
+  window.addEventListener('online', intentarCola);
+})();
+</script>
+</body>
+</html>

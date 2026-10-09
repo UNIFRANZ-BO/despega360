@@ -1,0 +1,8 @@
+apps-script/.clasp.json
+.clasprc.json
+node_modules/
+tests/shots/
+tests/.check.js
+__pycache__/
+.DS_Store
+docs/
