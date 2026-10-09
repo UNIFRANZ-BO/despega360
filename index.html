@@ -407,7 +407,7 @@ nav.barra{position:fixed;left:0;right:0;bottom:0;z-index:5;
     <li><div><b>Responde aquí unas preguntas cortas</b><span>Te toma unos 5 minutos.</span></div></li>
     <li><div><b>Copia tu instrucción con un botón</b><span>Se arma sola con lo que elegiste.</span></div></li>
     <li><div><b>Pégala en tu IA y conversa con ella</b><span>Unos 40 minutos. Al final descargas tu plan.</span></div></li>
-    <li><div><b>Vuelve aquí y sube tu plan terminado</b><span>En PDF, Word o fotos. Así llega a tu mentora.</span></div></li>
+    <li><div><b>Vuelve aquí y sube tu plan terminado</b><span>En PDF, Word o fotos. Así llega al equipo de Despega 360.</span></div></li>
   </ol>
   <button class="atajo" type="button" data-ir="subir"><span class="ic" aria-hidden="true">📤</span><span>¿Ya terminaste tu plan con la IA? <b>Súbelo aquí</b></span></button>
   <details class="duda">
@@ -578,7 +578,7 @@ nav.barra{position:fixed;left:0;right:0;bottom:0;z-index:5;
 
   <div class="enviar">
     <h3>Cuando la IA te entregue tu plan…</h3>
-    <p>Vuelve a esta página y súbelo: así llega a tu mentora. Esta página recuerda dónde te quedaste.</p>
+    <p>Vuelve a esta página y súbelo: así llega al equipo de Despega 360. Esta página recuerda dónde te quedaste.</p>
     <button class="pdfbtn" type="button" data-ir="subir"><span aria-hidden="true">📤</span><span>Ya terminé: subir mi plan</span></button>
   </div>
 
@@ -600,7 +600,7 @@ nav.barra{position:fixed;left:0;right:0;bottom:0;z-index:5;
 <!-- 6 · Subir el plan terminado -->
 <section class="step" data-id="subir">
   <h2 tabindex="-1">Sube tu plan terminado</h2>
-  <p class="lead">Cuando la IA te entregue tu Plan de Acción, súbelo aquí. Llega al equipo de Despega 360 para que tu mentora lo revise.</p>
+  <p class="lead">Cuando la IA te entregue tu Plan de Acción, súbelo aquí. Llegará al equipo de Despega 360.</p>
 
   <div class="campo">
     <label for="nombre3">Nombre de tu emprendimiento</label>
@@ -630,13 +630,13 @@ nav.barra{position:fixed;left:0;right:0;bottom:0;z-index:5;
   <div class="exito" id="exito" hidden>
     <div class="sello" aria-hidden="true">✅</div>
     <h3>¡Tu plan llegó!</h3>
-    <p>Tu mentora ya puede revisarlo. ¡Felicidades por tu trabajo!</p>
+    <p>Ya lo recibió el equipo de Despega 360. ¡Felicidades por tu trabajo!</p>
     <ul id="exitoLista"></ul>
     <button class="cambiar" id="otraVez" type="button">Subir otro archivo</button>
   </div>
 </section>
 
-<p class="pie"><span class="ver-app" id="verApp">v2.0</span>Programa Despega 360, IFFI – UNIFRANZ/IPEE. Material elaborado con el apoyo financiero de la Unión Europea. Su contenido es responsabilidad exclusiva del IFFI y no refleja necesariamente los puntos de vista de la Unión Europea.</p>
+<p class="pie"><span class="ver-app" id="verApp">v2.1</span>Programa Despega 360, IFFI – UNIFRANZ/IPEE. Material elaborado con el apoyo financiero de la Unión Europea. Su contenido es responsabilidad exclusiva del IFFI y no refleja necesariamente los puntos de vista de la Unión Europea.</p>
 </main>
 
 <nav class="barra" aria-label="Pasos">
@@ -817,7 +817,7 @@ Cierra con 3 recordatorios cortos: llenar a mano los datos personales; guardar e
   /* ---------- Envío a Drive ----------
      URL de la aplicación web de Apps Script (termina en /exec). Sin URL la app funciona en
      modo de prueba: descarga el PDF pero no lo envía. ?api=<url> prueba otra URL sin guardarla. */
-  var VERSION = '2.0';
+  var VERSION = '2.1';
   var API_URL_DEFECTO = 'https://script.google.com/macros/s/AKfycbx1BiVd41679mynhee_t0etrP4PkSPeBhy9tGed8qAfNvQjk7xAK8lMD6PDQASeGHNzzg/exec';
   var QS = new URLSearchParams(location.search);
   var API_URL = (QS.get('api') || API_URL_DEFECTO).trim();
@@ -1137,7 +1137,7 @@ Cierra con 3 recordatorios cortos: llenar a mano los datos personales; guardar e
     row('Le faltaba', falta.length ? falta.join(', ') : 'Nada');
 
     sec('4. Siguiente paso');
-    var sig = doc.splitTextToSize(latin('Pegar la instrucción en ' + (S.ia || 'su IA') + ', completar los 10 bloques del Plan de Acción Individualizado, descargar el plan y subirlo en el Constructor Despega 360 para que lo revise su mentora.'), W - 2*M);
+    var sig = doc.splitTextToSize(latin('Pegar la instrucción en ' + (S.ia || 'su IA') + ', completar los 10 bloques del Plan de Acción Individualizado, descargar el plan y subirlo en el Constructor Despega 360 para enviarlo al equipo del programa.'), W - 2*M);
     salto(sig.length * 5 + 2); doc.setFont('helvetica','normal'); doc.setFontSize(11); doc.setTextColor('#2A1338');
     doc.text(sig, M, y); y += sig.length * 5;
 
@@ -1580,7 +1580,7 @@ Cierra con 3 recordatorios cortos: llenar a mano los datos personales; guardar e
     checkPrivacy();
   }
 
-  /* ---------- Panel técnico (?admin=1 o tres toques en «v2.0») ---------- */
+  /* ---------- Panel técnico (?admin=1 o tres toques en «v2.1») ---------- */
   function admLog(m){ var l = $('#admLog'); l.textContent = (l.textContent === 'Listo.' ? '' : l.textContent + '\n') + m; l.scrollTop = 1e9; }
   function abrirAdmin(){
     $('#admUrl').textContent = API_OK ? API_URL + (QS.get('api') ? '  (de ?api=)' : '  (del archivo)') : 'SIN CONFIGURAR (modo de prueba): falta la URL /exec en API_URL_DEFECTO';

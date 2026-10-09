@@ -83,6 +83,8 @@ Carpeta en uso: «Despega 360 · Constancias de las emprendedoras» (creada con 
 - [x] v2.0 (subir el plan terminado) escrita y probada en local (backend simulado + e2e). Commit local.
 - [x] Script v2.0 implementado («Nueva versión», misma URL): ping → `version_app:"2.0"`; foto PRUEBA subida OK y archivo falso rechazado (09-oct-2026).
 - [x] App v2.0 publicada → **https://unifranz-bo.github.io/despega360/?v=2** (la app v2 no funciona con el script v1).
+- [x] App v2.1 (09-oct-2026): la interfaz ya no dice que el archivo llega «a tu mentora», sino «al equipo de Despega 360»
+      (la instrucción para la IA sí sigue mencionando a la mentora, como el original). **Enlace vigente: https://unifranz-bo.github.io/despega360/?v=3**
 - [x] Script v2.1 implementado (09-oct-2026): ping → `version_app:"2.1"`; prueba real: 2 PDF a «PRUEBA Subcarpeta (borrar)» con el nombre escrito distinto (Rafael debe borrar esa subcarpeta a mano).
 - [ ] Prueba real desde el celular; `borrarPruebas`; borrar a mano cualquier PDF de prueba sin prefijo
       (posible «… – Delicias del Valle.pdf» de una e2e mal aislada en v1.1; ya corregido).
